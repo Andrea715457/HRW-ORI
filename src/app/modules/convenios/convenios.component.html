@@ -1,1 +1,172 @@
-<p>convenios works!</p>,
+<div class="-mt-8">
+  <!-- Botones para alternar -->
+  <div class="flex gap-4 mb-6">
+    <button
+      class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+      (click)="showConvenio()">
+      Convenio
+    </button>
+    <button
+      class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+      (click)="showInstitucion()">
+      Institución
+    </button>
+  </div>
+
+  <!-- FORMULARIO CONVENIO -->
+  <div *ngIf="view === 'convenio'" class="bg-white shadow-lg rounded-xl p-6">
+    <h2 class="text-xl font-semibold mb-4">Formulario de Convenio</h2>
+    <form [formGroup]="convenioForm" class="pace-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Código</label>
+          <input formControlName="codigo" type="text" class="w-full border rounded p-2" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Nombre</label>
+          <input formControlName="nombre" type="text" class="w-full border rounded p-2" />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium">Fecha Inicio</label>
+            <input formControlName="fechaInicio" type="date" class="w-full border rounded p-2" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium">Fecha Finalización</label>
+            <input formControlName="fechaFinalizacion" type="date" class="w-full border rounded p-2" />
+          </div>
+        </div>
+
+
+        <div>
+          <label class="block text-sm font-medium">Estado</label>
+          <select formControlName="estado" class="w-full border rounded p-2">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Tipo de Convenio</label>
+          <input formControlName="tipoConvenio" type="text" class="w-full border rounded p-2" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Institución</label>
+          <select formControlName="institucionId" class="w-full border rounded p-2">
+            <option *ngFor="let inst of instituciones" [value]="inst.id">
+              {{ inst.nombre }} ({{ nombrePaisDeInstitucion(inst.id) }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tipos de movilidad -->
+      <div >
+        <label class="block text-sm font-medium">Tipos de Movilidad</label>
+        <div formArrayName="tipos" class="space-y-2">
+          <div *ngFor="let tipo of tipos.controls; let i = index" [formGroupName]="i" class="flex gap-2 items-center">
+            <select formControlName="tipoCodigo" class="flex-1 border rounded p-2">
+              <option *ngFor="let tm of tiposMovilidad" [value]="tm.codigo">{{ tm.nombre }}</option>
+            </select>
+            <button type="button" (click)="removeTipo(i)" class="px-2 py-1 bg-red-500 text-white rounded">x</button>
+          </div>
+        </div>
+        <button type="button" (click)="addTipo()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded">+ Agregar Tipo</button>
+      </div>
+
+      <div class="flex justify-end gap-3 mt-4">
+        <button type="button" (click)="resetConvenioForm()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
+        <button type="button" (click)="saveConvenio()" class="px-4 py-2 bg-blue-600 rounded text-white">Guardar</button>
+      </div>
+    </form>
+    <!-- TABLA DE CONVENIOS -->
+    <div class="mt-8 overflow-x-auto">
+      <h3 class="text-lg font-semibold mb-3">Listado de Convenios</h3>
+      <table class="min-w-full border border-gray-300 rounded-lg text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 border">Código</th>
+            <th class="px-4 py-2 border">Nombre</th>
+            <th class="px-4 py-2 border">Tipo</th>
+            <th class="px-4 py-2 border">Estado</th>
+            <th class="px-4 py-2 border">Institución</th>
+            <th class="px-4 py-2 border">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of convenios; let i = index" class="hover:bg-gray-50">
+            <td class="px-4 py-2 border">{{ c.codigo }}</td>
+            <td class="px-4 py-2 border">{{ c.nombre }}</td>
+            <td class="px-4 py-2 border">{{ c.tipoConvenio }}</td>
+            <td class="px-4 py-2 border capitalize">{{ c.estado }}</td>
+            <td class="px-4 py-2 border">
+              {{ c.institucionId }}
+            </td>
+            <td class="px-4 py-2 border text-center">
+              <button (click)="editConvenio(c)" class="px-2 py-1 bg-yellow-500 text-white rounded mr-1">Editar</button>
+              <button (click)="removeConvenio(c)" class="px-2 py-1 bg-red-600 text-white rounded">Eliminar</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="convenios.length === 0">
+            <td colspan="6" class="px-4 py-4 text-center text-gray-500">No hay convenios</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FORMULARIO INSTITUCIÓN -->
+  <div *ngIf="view === 'institucion'" class="bg-white shadow-lg rounded-xl p-6 ">
+    <h2 class="text-xl font-semibold mb-4">Formulario de Institución</h2>
+    <form [formGroup]="institucionForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium">Código</label>
+        <input formControlName="codigo" type="text" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Nombre</label>
+        <input formControlName="nombre" type="text" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Dirección</label>
+        <input formControlName="direccion" type="text" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Representante Legal</label>
+        <input formControlName="representanteLegal" type="text" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Correo</label>
+        <input formControlName="correo" type="email" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Teléfono</label>
+        <input formControlName="telefono" type="text" class="w-full border rounded p-2" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">País</label>
+        <select formControlName="paisIso" class="w-full border rounded p-2">
+          <option *ngFor="let p of paises" [value]="p.codigoISO">{{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end gap-3 mt-4">
+        <button type="button" (click)="institucionForm.reset()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
+        <button type="button" (click)="saveInstitucion()" class="px-4 py-2 bg-green-600 rounded text-white">Guardar</button>
+      </div>
+    </form>
+    <!-- TABLA DE INSTITUCIONES -->
+
+  </div>
+</div>
