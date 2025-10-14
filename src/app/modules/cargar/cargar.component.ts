@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, ElementRef, AfterViewInit, Renderer2, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, AfterViewInit, Renderer2, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { UploadService } from '../../core/services/upload.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-cargar',
@@ -18,8 +20,10 @@ export default class CargarComponent implements AfterViewInit {
   // Guardamos los archivos con la key = objectURL
   FILES: { [objectURL: string]: File } = {};
   private dragCounter = 0;
+  isUploading = false;
+  uploadMessage = '';
 
-  constructor(private renderer: Renderer2) {}
+  constructor(private renderer: Renderer2, private uploadService: UploadService,  private cdr: ChangeDetectorRef ) {}
 
   ngAfterViewInit(): void {
     // Delegación de clicks en la galería para botones "delete"
@@ -47,25 +51,55 @@ export default class CargarComponent implements AfterViewInit {
     this.hiddenInputRef.nativeElement.click();
   }
 
-  onHiddenInputChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files) return;
-    for (const file of Array.from(input.files)) {
-      this.addFile(file);
-    }
-    // limpiar el input para permitir seleccionar el mismo archivo otra vez si se desea
+onHiddenInputChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (!input.files) return;
+
+  // Si ya hay un archivo cargado, bloquear
+  if (Object.keys(this.FILES).length > 0) {
+    alert('Ya tienes un archivo cargado. Elimina el actual antes de seleccionar uno nuevo.');
     input.value = '';
+    return;
   }
 
+  const file = input.files[0];
+  if (file) this.addFile(file);
+
+  // limpiar input para permitir reintentos con el mismo archivo
+  input.value = '';
+}
+
+
   private addFile(file: File) {
+    
+    if (Object.keys(this.FILES).length > 0) {
+      alert('Ya tienes un archivo cargado. Elimina el archivo actual antes de subir uno nuevo.');
+      return;
+    }
+    
+    const allowedTypes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+    ];
+    const allowedExtensions = ['.xls', '.xlsx', '.csv'];
+
+    // Verificar tipo MIME y extensión
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(ext);
+
+    if (!isValid) {
+      alert(`El archivo "${file.name}" no es un archivo Excel válido (.xls, .xlsx o .csv).`);
+      return;
+    }
+
+    // --- Si pasa la validación, continúa ---
     const isImage = !!file.type.match('image.*');
     const objectURL = URL.createObjectURL(file);
 
-    // clonamos el template correcto
     const templateRef = isImage ? this.imageTempl.nativeElement : this.fileTempl.nativeElement;
     const clone = (templateRef.content.cloneNode(true) as DocumentFragment);
 
-    // rellenar datos en el clone
     const li = clone.querySelector('li') as HTMLElement;
     const h1 = clone.querySelector('h1') as HTMLElement;
     const sizeEl = clone.querySelector('.size') as HTMLElement;
@@ -73,56 +107,73 @@ export default class CargarComponent implements AfterViewInit {
     const deleteBtn = clone.querySelector('[data-delete], .delete') as HTMLElement | null;
 
     if (li) {
-      // asignamos un id único (objectURL puede contener caracteres no válidos para id, usamos encodeURIComponent)
       const safeId = encodeURIComponent(objectURL);
       li.id = safeId;
-      // seteamos dataset en el botón de borrar para poder eliminar después
-      if (deleteBtn) {
-        deleteBtn.setAttribute('data-target', safeId);
-      }
+      if (deleteBtn) deleteBtn.setAttribute('data-target', safeId);
     }
 
     if (h1) h1.textContent = file.name;
     if (sizeEl) {
-      const sizeText =
-        file.size > 1024 ? (file.size > 1048576 ? Math.round(file.size / 1048576) + 'mb' : Math.round(file.size / 1024) + 'kb') : file.size + 'b';
+      const sizeText = file.size > 1024
+        ? (file.size > 1048576
+            ? Math.round(file.size / 1048576) + 'mb'
+            : Math.round(file.size / 1024) + 'kb')
+        : file.size + 'b';
       sizeEl.textContent = sizeText;
     }
 
     if (isImage && img) {
       img.src = objectURL;
       img.alt = file.name;
-      // quitar la clase hidden para la previsualización
       img.classList.remove('hidden');
     }
 
-    // ocultar el mensaje "No hay archivos seleccionados"
     this.emptyRef.nativeElement.classList.add('hidden');
-
-    // prepend al gallery
     this.galleryRef.nativeElement.prepend(clone);
 
-    // almacenar el archivo usando la key safeId
     const safeId = encodeURIComponent(objectURL);
     this.FILES[safeId] = file;
   }
-
   /* Drag & Drop helpers */
   private hasFiles(event: DragEvent) {
     const types = event.dataTransfer?.types ?? [];
     return Array.from(types).indexOf('Files') > -1;
   }
 
-  dropHandler(ev: DragEvent) {
-    ev.preventDefault();
-    const files = ev.dataTransfer?.files;
-    if (!files) return;
-    for (const f of Array.from(files)) {
-      this.addFile(f);
-    }
+dropHandler(ev: DragEvent) {
+  ev.preventDefault();
+
+  // 🔹 Si ya hay un archivo cargado, bloquear
+  if (Object.keys(this.FILES).length > 0) {
+    alert('Ya tienes un archivo cargado. Elimina el actual antes de subir otro.');
     this.overlayRef.nativeElement.classList.remove('draggedover');
     this.dragCounter = 0;
+    return;
   }
+
+  const files = ev.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  const allowedTypes = [
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+  ];
+  const allowedExtensions = ['.xls', '.xlsx', '.csv'];
+
+  const file = files[0];
+  const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+  const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(ext);
+
+  if (!isValid) {
+    alert(`El archivo "${file.name}" no es válido. Solo se permiten Excel (.xls, .xlsx, .csv).`);
+  } else {
+    this.addFile(file);
+  }
+
+  this.overlayRef.nativeElement.classList.remove('draggedover');
+  this.dragCounter = 0;
+}
 
   dragEnterHandler(e: DragEvent) {
     e.preventDefault();
@@ -146,22 +197,50 @@ export default class CargarComponent implements AfterViewInit {
     }
   }
 
-  /* Submit y Cancel */
-  submit() {
-    // Aquí puedes enviar 'this.FILES' a tu backend.
-    // Por ahora solo mostramos el resumen:
-    alert(`Submitted Files:\n${JSON.stringify(Object.keys(this.FILES))}`);
-    console.log(this.FILES);
+ submit() {
+    const fileEntries = Object.entries(this.FILES);
+    if (fileEntries.length === 0) {
+      alert('Por favor, selecciona un archivo antes de subir.');
+      return;
+    }
+
+    const file = fileEntries[0][1];
+    this.isUploading = true;
+    this.uploadMessage = 'Subiendo archivo...';
+    this.cdr.detectChanges(); //  Forzar actualización visual inmediata
+
+    this.uploadService.uploadExcel(file).subscribe({
+      next: (response) => {
+        console.log('Respuesta del backend:', response);
+        this.uploadMessage = 'Archivo subido correctamente.';
+        this.isUploading = false;
+
+        // Refrescar el estado del componente visualmente
+        this.cdr.detectChanges();
+
+        // Opcional: limpiar archivo tras confirmación
+        setTimeout(() => {
+          this.cancel(); // limpia galería
+          this.uploadMessage = '';
+          this.cdr.detectChanges();
+        }, 2500);
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error('Error al subir:', error);
+        this.uploadMessage = ` Error al subir el archivo: ${error.message}`;
+        this.isUploading = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   cancel() {
-    // remover todos los hijos del gallery
     while (this.galleryRef.nativeElement.firstChild) {
       this.galleryRef.nativeElement.removeChild(this.galleryRef.nativeElement.firstChild);
     }
-    // restaurar el empty
     this.FILES = {};
     this.emptyRef.nativeElement.classList.remove('hidden');
     this.galleryRef.nativeElement.appendChild(this.emptyRef.nativeElement);
+    this.uploadMessage = '';
   }
 }

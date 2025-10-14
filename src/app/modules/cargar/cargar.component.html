@@ -23,18 +23,26 @@
     <section class="h-full overflow-auto p-8 w-full h-full flex flex-col">
       <header class="border-dashed border-2 border-gray-400 py-12 flex flex-col justify-center items-center">
         <p class="mb-3 font-semibold text-gray-900 flex flex-wrap justify-center">
-          <span>Arrastra y suelta tus</span>&nbsp;<span>archivos en cualquier lugar o</span>
+          <span>Arrastra y suelta tu</span>&nbsp;<span>archivo Excel </span>
         </p>
 
-        <input #hiddenInput id="hidden-input" type="file" multiple class="hidden" (change)="onHiddenInputChange($event)" />
+      <input
+        #hiddenInput
+        id="hidden-input"
+        type="file"
+        accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+        class="hidden"
+        (change)="onHiddenInputChange($event)"
+      />
+
 
         <button (click)="openFileExplorer()" id="button" class="mt-2 rounded-sm px-3 py-1 bg-gray-200 hover:bg-gray-300 focus:shadow-outline focus:outline-none">
           Subir un archivo
         </button>
       </header>
 
-      <h1 class="pt-8 pb-3 font-semibold sm:text-lg text-gray-900">
-        Para subir
+      <h1 class="pt-8 pb-3 font-semibold sm:text-lg text-gray-900  text-center">
+        Archivo a subir
       </h1>
 
       <ul #gallery id="gallery" class="flex flex-1 flex-wrap -m-1">
@@ -45,14 +53,32 @@
       </ul>
     </section>
 
-    <footer class="flex justify-end px-8 pb-8 pt-4">
-      <button (click)="submit()" id="submit" class="rounded-sm px-3 py-1 bg-blue-700 hover:bg-blue-500 text-white focus:shadow-outline focus:outline-none">
-        Subir ahora
-      </button>
-      <button (click)="cancel()" id="cancel" class="ml-3 rounded-sm px-3 py-1 hover:bg-gray-300 focus:shadow-outline focus:outline-none">
-        Cancel
-      </button>
-    </footer>
+<footer class="flex flex-col items-end px-8 pb-8 pt-4">
+  <div class="flex gap-3">
+    <button
+      (click)="submit()"
+      id="submit"
+      [disabled]="isUploading"
+      class="rounded-sm px-3 py-1 bg-blue-700 hover:bg-blue-500 text-white focus:shadow-outline focus:outline-none disabled:opacity-60">
+      {{ isUploading ? 'Subiendo...' : 'Subir ahora' }}
+    </button>
+
+    <button
+      (click)="cancel()"
+      id="cancel"
+      [disabled]="isUploading"
+      class="rounded-sm px-3 py-1 hover:bg-gray-300 focus:shadow-outline focus:outline-none">
+      Cancelar
+    </button>
+  </div>
+  
+  @if(uploadMessage){
+    <p class="text-sm mt-3 text-gray-700">
+      {{ uploadMessage }}
+    </p>
+  }
+
+</footer>
   </article>
 </main>
 
