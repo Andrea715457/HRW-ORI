@@ -9,6 +9,7 @@
         <th class="px-4 py-2 border text-left">Correo</th>
         <th class="px-4 py-2 border text-left">Teléfono</th>
         <th class="px-4 py-2 border text-left">País</th>
+        <th class="px-4 py-2 border text-left">Estado</th>
         <th class="px-4 py-2 border text-center">Acciones</th>
       </tr>
     </thead>
@@ -22,9 +23,19 @@
           <td class="px-4 py-2 border">{{ inst.correo || '—' }}</td>
           <td class="px-4 py-2 border">{{ inst.telefono || '—' }}</td>
           <td class="px-4 py-2 border">{{ inst.nombre_pais }}</td>
-          <td class="px-4 py-2 border text-center">
-            <button (click)="edit.emit(inst)" class="px-2 py-1 bg-yellow-500 text-white rounded">Editar</button>
+           <td class="px-4 py-2 border">
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold"
+              [class.bg-green-100]="inst.estado==='Activo'" [class.text-green-800]="inst.estado==='Activo'"
+              [class.bg-red-100]="inst.estado==='Inactivo'" [class.text-red-800]="inst.estado==='Inactivo'">
+              {{ inst.estado | titlecase }}
+            </span>
           </td>
+          <td class="px-4 py-2 border text-center">
+          <div class="flex gap-2 justify-center">
+            <button (click)="edit.emit(inst)" class="px-2 py-1 bg-yellow-500 text-white rounded">Editar</button>
+            <button (click)="remove.emit(inst)" class="px-2 py-1 bg-red-600 text-white rounded">Eliminar</button>
+          </div>
+        </td>
         </tr>
       }
       @if (instituciones.length === 0) {

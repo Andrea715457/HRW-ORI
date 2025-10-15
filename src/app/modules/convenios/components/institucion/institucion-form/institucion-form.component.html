@@ -1,7 +1,10 @@
 <form [formGroup]="form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
   <div>
     <label class="block text-sm font-medium">Código</label>
-    <input formControlName="codigo" type="text" class="w-full border rounded p-2"/>
+    <input formControlName="codigo"
+       type="text"
+       class="w-full border rounded p-2"
+       [readonly]="editingCodigo !== null" />
     @if (form.get('codigo')?.touched && form.get('codigo')?.invalid) {
       <div class="text-red-500 text-xs mt-1">
         @if (form.get('codigo')?.errors?.['required']) {<span>El código es obligatorio.</span>}

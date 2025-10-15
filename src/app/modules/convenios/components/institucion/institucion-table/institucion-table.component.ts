@@ -18,6 +18,8 @@ export default class InstitucionTableComponent {
 
   @Output() edit = new EventEmitter<Institucion>();
   @Output() pageChange = new EventEmitter<{ pageIndex: number; pageSize: number }>();
+  @Output() remove = new EventEmitter<Institucion>();
+
   paisNombre(iso: string){ return this.paises.find(p=>p.codigoISO===iso)?.nombre ?? '—'; }
 
   prev() {

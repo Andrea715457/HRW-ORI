@@ -8,6 +8,7 @@ export interface Institucion {
   telefono?: string;
   paisIso: string;
   nombre_pais?: string;
+  estado?: string;
 }
 
 export interface TipoMovilidad {

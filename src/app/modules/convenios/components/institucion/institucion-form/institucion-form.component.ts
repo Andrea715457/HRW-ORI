@@ -13,7 +13,7 @@ import { Institucion, Pais } from '../../../models/ori.model';
 export default class InstitucionFormComponent implements OnChanges {
   @Input() paises: Pais[] = [];
   @Input() initial: (Institucion|null) = null;
-
+ @Input() editingCodigo: string | null = null;
   @Output() submitted = new EventEmitter<Omit<Institucion,'id'> & {id?: number|null}>();
   @Output() canceled = new EventEmitter<void>();
 
