@@ -11,7 +11,7 @@ export const routes: Routes = [
     },
     {
         path: 'login',
-        component: NoAuthLayoutComponent        
+        component: NoAuthLayoutComponent
     },
     {
         path: 'auth',
@@ -20,7 +20,7 @@ export const routes: Routes = [
         children:[
             {
                 path: 'dashboard',
-                loadComponent: () => import('./modules/dashboard/dashboard.component')
+                loadComponent: () => import('./modules/dashboard/dashboard.component').then(m => m.DashboardComponent)
             },
             {
                 path: 'convenios',
@@ -38,7 +38,7 @@ export const routes: Routes = [
                 path: '**',
                 redirectTo: 'auth'
             }
-        ]    
+        ]
     },
     {
         path: '**',

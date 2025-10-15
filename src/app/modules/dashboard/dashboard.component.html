@@ -1,9 +1,153 @@
-<div class="relative w-full h-screen pb-[56.25%] overflow-hidden -mt-16">
-  <iframe
-    src="https://lookerstudio.google.com/embed/reporting/3a99b713-b4dc-4c04-b7ca-8bf4ec8d7694/page/UFrZF"
-    frameborder="0"
-    class="absolute top-0 left-0 w-full h-full border-0"
-    allowfullscreen
-    sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
-  </iframe>
+<div class="space-y-6 -mt-8">
+  <!-- KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+      <div class="text-sm text-gray-500">Total convenios activos</div>
+      <div class="text-4xl font-semibold mt-3 text-gray-800">{{ totalConvenios }}</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+      <div class="text-sm text-gray-500">Convenio</div>
+      <div class="text-4xl font-semibold mt-3 text-gray-800">{{ convenios }}</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+      <div class="text-sm text-gray-500">% Convenios usados</div>
+      <div class="text-4xl font-semibold mt-3 text-gray-800">{{ pctUsados }}</div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+      <div class="text-sm text-gray-500">% Convenios activos</div>
+      <div class="text-4xl font-semibold mt-3 text-gray-800">{{ pctActivos }}</div>
+    </div>
+  </div>
+
+  <!-- Donut charts row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 items-start">
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Estudiante Entrante</div>
+      <div class="h-40">
+        <canvas #studentInCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Estudiante Saliente</div>
+      <div class="h-40">
+        <canvas #studentOutCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Docente Entrante</div>
+      <div class="h-40">
+        <canvas #teacherInCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Docente Saliente</div>
+      <div class="h-40">
+        <canvas #teacherOutCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Administrativo Entrante</div>
+      <div class="h-40">
+        <canvas #adminInCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="mb-2 font-medium">Administrativo Saliente</div>
+      <div class="h-40">
+        <canvas #adminOutCanvas class="w-full h-full block"></canvas>
+      </div>
+    </div>
+  </div>
 </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+  <!-- Izquierda: Programa vs usuarios en movilidad (Horizontal Bar) -->
+  <div class="bg-white rounded-lg shadow p-4">
+    <h3 class="font-medium mb-3">Programa vs usuarios en movilidad</h3>
+    <div class="h-64 md:h-80">
+      <canvas #programCanvas class="w-full h-full block"></canvas>
+    </div>
+    <!-- Leyenda abajo (si quieres extra) -->
+    <div class="flex items-center gap-4 mt-3 text-sm text-gray-600">
+      <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-500 rounded-sm inline-block"></span> Presencial</div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 bg-orange-400 rounded-sm inline-block"></span> Virtual</div>
+    </div>
+  </div>
+
+  <!-- Derecha: Mapa de movilidades -->
+  <div class="bg-white rounded-lg shadow p-4">
+    <h3 class="font-medium mb-3">Países en donde se realizaron movilidades</h3>
+    <!-- El mapa usa google.visualization.GeoChart -->
+    <div id="geoMap" class="w-full h-64 md:h-80"></div>
+
+    <!-- barra de color (simple indicativa) -->
+    <div class="flex items-center gap-2 mt-3">
+      <span class="text-sm font-semibold mr-2">Movilidades</span>
+      <div class="h-3 flex-1 rounded overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-green-300 via-pink-300 to-blue-500"></div>
+      </div>
+      <span class="text-sm ml-2">0 — 9</span>
+    </div>
+  </div>
+</div>
+
+<!-- == FILA SUPERIOR: stacked (izq) + 2 pies (der) == -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+  <!-- IZQUIERDA: Stacked horizontal (ocupa toda la columna izquierda) -->
+  <div class="bg-white rounded-lg shadow p-4">
+    <h3 class="font-medium mb-3">Virtual y Presencial por Convenio</h3>
+    <div class="h-80">
+      <canvas #stackedCanvas class="w-full h-full block"></canvas>
+    </div>
+  </div>
+
+  <!-- DERECHA: Solo 2 pies (estudiante saliente + estudiante entrante) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Estudiante Saliente</h4>
+      <div class="h-56">
+        <canvas #pieStudentOut class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Estudiante Entrante</h4>
+      <div class="h-56">
+        <canvas #pieStudentIn class="w-full h-full block"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- == SECCIÓN INFERIOR: resto de pies en grid separado == -->
+<div class="p-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Docente Saliente</h4>
+      <div class="h-56"><canvas #pieTeacherOut class="w-full h-full block"></canvas></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Docente Entrante</h4>
+      <div class="h-56"><canvas #pieTeacherIn class="w-full h-full block"></canvas></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Administrativo Entrante</h4>
+      <div class="h-56"><canvas #pieAdminIn class="w-full h-full block"></canvas></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="mb-2">Tipo Movilidad Administrativo Saliente</h4>
+      <div class="h-56"><canvas #pieAdminOut class="w-full h-full block"></canvas></div>
+    </div>
+  </div>
+</div>
+
