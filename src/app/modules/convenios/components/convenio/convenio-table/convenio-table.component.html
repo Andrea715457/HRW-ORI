@@ -1,0 +1,60 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-4 py-2 border text-left">Código</th>
+        <th class="px-4 py-2 border text-left">Nombre</th>
+        <th class="px-4 py-2 border text-left">Tipo convenio</th>
+        <th class="px-4 py-2 border text-left">Fecha inicio</th>
+        <th class="px-4 py-2 border text-left">Fecha finalización</th>
+        <th class="px-4 py-2 border text-left">Estado</th>
+        <th class="px-4 py-2 border text-left">Institución</th>
+        <th class="px-4 py-2 border text-left">Tipos movilidad</th>
+        <th class="px-4 py-2 border text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of convenios; track c.id) {
+        <tr class="hover:bg-gray-50 align-top">
+          <td class="px-4 py-2 border">{{ c.codigo }}</td>
+          <td class="px-4 py-2 border"><div class="font-medium">{{ c.nombre }}</div></td>
+          <td class="px-4 py-2 border">{{ c.tipoConvenio }}</td>
+          <td class="px-4 py-2 border">{{ c.fechaInicio | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-2 border">{{ c.fechaFinalizacion | date:'dd/MM/yyyy' }}</td>
+          <td class="px-4 py-2 border">
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold"
+              [class.bg-green-100]="c.estado==='activo'" [class.text-green-800]="c.estado==='activo'"
+              [class.bg-red-100]="c.estado==='inactivo'" [class.text-red-800]="c.estado==='inactivo'"
+              [class.bg-yellow-100]="c.estado==='pendiente'" [class.text-yellow-800]="c.estado==='pendiente'">
+              {{ c.estado | titlecase }}
+            </span>
+          </td>
+          <td class="px-4 py-2 border">{{ institucionNombre(c.institucionId) }}</td>
+          <td class="px-4 py-2 border">
+            <div class="flex flex-wrap gap-1">
+              @for (t of displayedTipos(c); track $index) {
+                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-800 text-xs">{{ tipoNombre(t.tipoCodigo) || t.tipoCodigo }}</span>
+              }
+              @if (extraTiposCount(c) > 0 && !expanded[c.id]) {
+                <button class="text-xs text-blue-600 underline ml-1" (click)="toggle(c)">+{{ extraTiposCount(c) }} más</button>
+              }
+              @if (expanded[c.id]) {
+                @for (t of c.tipos; track $index) {
+                  <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-800 text-xs">{{ tipoNombre(t.tipoCodigo) || t.tipoCodigo }}</span>
+                }
+                <button class="text-xs text-gray-600 underline ml-2" (click)="toggle(c)">Mostrar menos</button>
+              }
+              @if (!c.tipos?.length) { <span class="text-gray-500 text-xs">—</span> }
+            </div>
+          </td>
+          <td class="px-4 py-2 border text-center">
+            <button (click)="edit.emit(c)" class="px-2 py-1 bg-yellow-500 text-white rounded">Editar</button>
+          </td>
+        </tr>
+      }
+      @if (convenios.length === 0) {
+        <tr><td colspan="9" class="px-4 py-4 text-center text-gray-500">No hay convenios</td></tr>
+      }
+    </tbody>
+  </table>
+</div>

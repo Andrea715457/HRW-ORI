@@ -1,287 +1,59 @@
 <div class="-mt-8">
-  <!-- Botones para alternar -->
   <div class="flex gap-4 mb-6">
-    <button
-      class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-      (click)="showConvenio()">
-      Convenio
-    </button>
-    <button
-      class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-      (click)="showInstitucion()">
-      Institución
-    </button>
+    <button class="px-4 py-2 rounded-lg text-white"
+            [class.bg-blue-700]="view() === 'convenio'"
+            [class.bg-blue-600]="view() !== 'convenio'"
+            (click)="setView('convenio')">Convenio</button>
+
+    <button class="px-4 py-2 rounded-lg text-white"
+            [class.bg-green-700]="view() === 'institucion'"
+            [class.bg-green-600]="view() !== 'institucion'"
+            (click)="setView('institucion')">Institución</button>
   </div>
 
-  <!-- FORMULARIO CONVENIO -->
-<div *ngIf="view === 'convenio'" class="bg-white shadow-lg rounded-xl p-6">
-  <h2 class="text-xl font-semibold mb-4">Formulario de Convenio</h2>
-  <form [formGroup]="convenioForm" class="space-y-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium">Código</label>
-        <input formControlName="codigo" type="text" class="w-full border rounded p-2" />
-        <div *ngIf="convenioForm.get('codigo')?.touched && convenioForm.get('codigo')?.invalid" class="text-red-500 text-xs mt-1">
-          <span *ngIf="convenioForm.get('codigo')?.errors?.['required']">El código es obligatorio.</span>
-          <span *ngIf="convenioForm.get('codigo')?.errors?.['pattern']">Solo letras mayúsculas, números y guiones.</span>
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium">Nombre</label>
-        <input formControlName="nombre" type="text" class="w-full border rounded p-2" />
-        <div *ngIf="convenioForm.get('nombre')?.touched && convenioForm.get('nombre')?.invalid" class="text-red-500 text-xs mt-1">
-          <span *ngIf="convenioForm.get('nombre')?.errors?.['required']">El nombre es obligatorio.</span>
-          <span *ngIf="convenioForm.get('nombre')?.errors?.['maxlength']">Máximo 250 caracteres.</span>
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium">Tipo de Convenio</label>
-        <input formControlName="tipoConvenio" type="text" class="w-full border rounded p-2" />
-        <div *ngIf="convenioForm.get('tipoConvenio')?.touched && convenioForm.get('tipoConvenio')?.invalid" class="text-red-500 text-xs mt-1">
-          <span *ngIf="convenioForm.get('tipoConvenio')?.errors?.['required']">El tipo de convenio es obligatorio.</span>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium">Fecha Inicio</label>
-          <input formControlName="fechaInicio" type="date" class="w-full border rounded p-2" />
-          <div *ngIf="convenioForm.get('fechaInicio')?.touched && convenioForm.get('fechaInicio')?.invalid" class="text-red-500 text-xs mt-1">
-            <span *ngIf="convenioForm.get('fechaInicio')?.errors?.['required']">La fecha de inicio es obligatoria.</span>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Fecha Finalización</label>
-          <input formControlName="fechaFinalizacion" type="date" class="w-full border rounded p-2" />
-          <div *ngIf="convenioForm.get('fechaFinalizacion')?.touched && convenioForm.get('fechaFinalizacion')?.invalid" class="text-red-500 text-xs mt-1">
-            <span *ngIf="convenioForm.get('fechaFinalizacion')?.errors?.['required']">La fecha de finalización es obligatoria.</span>
-          </div>
-        </div>
-      </div>
-        <div>
-        <label class="block text-sm font-medium">Estado</label>
-        <select formControlName="estado" class="w-full border rounded p-2">
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="pendiente">Pendiente</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium">Institución</label>
-        <select formControlName="institucionId" class="w-full border rounded p-2">
-          <option *ngFor="let inst of instituciones" [value]="inst.id">
-            {{ inst.nombre }} ({{ nombrePaisDeInstitucion(inst.id) }})
-          </option>
-        </select>
-        <div *ngIf="convenioForm.get('institucionId')?.touched && convenioForm.get('institucionId')?.invalid" class="text-red-500 text-xs mt-1">
-          <span *ngIf="convenioForm.get('institucionId')?.errors?.['required']">La institución es obligatoria.</span>
-        </div>
-      </div>
-    </div>
-    <!-- Tipos de movilidad -->
-    <div>
-      <label class="block text-sm font-medium">Tipos de Movilidad</label>
-      <div formArrayName="tipos" class="space-y-2">
-        <div *ngIf="convenioForm.get('tipos')?.touched && convenioForm.get('tipos')?.invalid" class="text-red-500 text-xs mt-1">
-          <span *ngIf="convenioForm.get('tipos')?.errors?.['minlength']">Debe seleccionar al menos un tipo de movilidad.</span>
-        </div>
-        <div *ngFor="let tipo of tipos.controls; let i = index" [formGroupName]="i" class="flex gap-2 items-center">
-          <select formControlName="tipoCodigo" class="flex-1 border rounded p-2">
-            <option value="">Seleccione un tipo</option>
-            <option *ngFor="let tm of tiposMovilidad" [value]="tm.codigo">{{ tm.nombre }}</option>
-          </select>
-          <button
-            type="button"
-            (click)="removeTipo(i)"
-            [disabled]="tipos.length === 1"
-            class="px-2 py-1 bg-red-500 text-white rounded disabled:bg-gray-300"
-            aria-label="Eliminar tipo de movilidad"
-          >
-            x
-          </button>
-        </div>
-      </div>
-      <button type="button" (click)="addTipo()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded">+ Agregar Tipo</button>
-    </div>
-    <div class="flex justify-end gap-3 mt-4">
-      <button type="button" (click)="resetConvenioForm()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
-      <button type="button" (click)="saveConvenio()" class="px-4 py-2 bg-blue-600 rounded text-white">Guardar</button>
-    </div>
-  </form>
+  @if (view() === 'convenio') {
+    <section class="bg-white shadow-lg rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">Formulario de Convenio</h2>
+      <app-convenio-form
+        [initial]="selectedConvenio()"
+        [instituciones]="institucionesOptions"
+        [tiposMovilidad]="tiposMovilidad"
+        (submitted)="onSaveConvenio($event)"
+        (canceled)="clearConvenioSelection()"
+      />
 
-  <!-- TABLA DE CONVENIOS -->
-  <div class="mt-8 overflow-x-auto">
-    <h3 class="text-lg font-semibold mb-3">Listado de Convenios</h3>
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="px-4 py-2 border text-left">Código</th>
-          <th class="px-4 py-2 border text-left">Nombre</th>
-          <th class="px-4 py-2 border text-left">Tipo convenio</th>
-          <th class="px-4 py-2 border text-left">Fecha inicio</th>
-          <th class="px-4 py-2 border text-left">Fecha finalización</th>
-          <th class="px-4 py-2 border text-left">Estado</th>
-          <th class="px-4 py-2 border text-left">Institución</th>
-          <th class="px-4 py-2 border text-left">Tipos movilidad</th>
-          <th class="px-4 py-2 border text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of convenios; let i = index" class="hover:bg-gray-50">
-          <td class="px-4 py-2 border align-top">{{ c.codigo }}</td>
-          <td class="px-4 py-2 border align-top">
-            <div class="font-medium">{{ c.nombre }}</div>
-          </td>
-          <td class="px-4 py-2 border align-top">{{ c.tipoConvenio }}</td>
-          <td class="px-4 py-2 border align-top">
-            {{ c.fechaInicio | date:'dd/MM/yyyy' }}
-          </td>
-          <td class="px-4 py-2 border align-top">
-            {{ c.fechaFinalizacion | date:'dd/MM/yyyy' }}
-          </td>
-          <td class="px-4 py-2 border align-top">
-            <span
-              class="inline-block px-2 py-0.5 rounded text-xs font-semibold"
-              [ngClass]="{
-                'bg-green-100 text-green-800': c.estado === 'activo',
-                'bg-red-100 text-red-800': c.estado === 'inactivo',
-                'bg-yellow-100 text-yellow-800': c.estado === 'pendiente'
-              }">
-              {{ c.estado | titlecase }}
-            </span>
-          </td>
-          <td class="px-4 py-2 border align-top">
-            {{ getInstitucionNombre(c.institucionId) }}
-          </td>
-          <td class="px-4 py-2 border align-top">
-            <div class="tipos-container">
-              <ng-container *ngFor="let t of displayedTipos(c); let ti = index">
-                <span class="chip">
-                  {{ getTipoNombre(t.tipoCodigo) || t.tipoCodigo }}
-                </span>
-              </ng-container>
-              <ng-container *ngIf="extraTiposCount(c) > 0 && !isExpanded(c)">
-                <button class="text-xs text-blue-600 underline ml-1" (click)="toggleExpand(c)" aria-label="Mostrar más tipos de movilidad">
-                  +{{ extraTiposCount(c) }} más
-                </button>
-              </ng-container>
-              <ng-container *ngIf="isExpanded(c)">
-                <ng-container *ngFor="let t of allTipos(c)">
-                  <span class="chip">
-                    {{ getTipoNombre(t.tipoCodigo) || t.tipoCodigo }}
-                  </span>
-                </ng-container>
-                <button class="text-xs text-gray-600 underline ml-2" (click)="toggleExpand(c)" aria-label="Mostrar menos tipos de movilidad">
-                  Mostrar menos
-                </button>
-              </ng-container>
-              <ng-container *ngIf="!(c.tipos && c.tipos.length)">
-                <span class="text-gray-500 text-xs">—</span>
-              </ng-container>
-            </div>
-          </td>
-          <td class="px-4 py-2 border text-center align-top">
-            <button (click)="editConvenio(c)" class="px-2 py-1 bg-yellow-500 text-white rounded mr-1">Editar</button>
-          </td>
-        </tr>
-        <tr *ngIf="convenios.length === 0">
-          <td colspan="9" class="px-4 py-4 text-center text-gray-500">No hay convenios</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <div class="mt-8">
+        <h3 class="text-lg font-semibold mb-3">Listado de Convenios</h3>
+        <app-convenio-table
+          [convenios]="convenios"
+          [instituciones]="institucionesOptions"
+          [tiposMovilidad]="tiposMovilidad"
+          (edit)="onEditConvenio($event)"
+        />
+      </div>
+    </section>
+  } @else {
+    <section class="bg-white shadow-lg rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">Formulario de Institución</h2>
+      <app-institucion-form
+        [initial]="selectedInstitucion()"
+        [paises]="paises"
+        (submitted)="onSaveInstitucion($event)"
+        (canceled)="clearInstitucionSelection()"
+      />
 
-  <!-- FORMULARIO INSTITUCIÓN -->
-   <!-- FORMULARIO INSTITUCIÓN -->
-<div *ngIf="view === 'institucion'" class="bg-white shadow-lg rounded-xl p-6">
-  <h2 class="text-xl font-semibold mb-4">Formulario de Institución</h2>
-  <form [formGroup]="institucionForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-      <label class="block text-sm font-medium">Código</label>
-      <input formControlName="codigo" type="text" class="w-full border rounded p-2" />
-      <div *ngIf="institucionForm.get('codigo')?.touched && institucionForm.get('codigo')?.invalid" class="text-red-500 text-xs mt-1">
-        <span *ngIf="institucionForm.get('codigo')?.errors?.['required']">El código es obligatorio.</span>
-        <span *ngIf="institucionForm.get('codigo')?.errors?.['pattern']">Solo letras mayúsculas, números y guiones.</span>
+      <div class="mt-8">
+        <h3 class="text-lg font-semibold mb-3">Listado de Instituciones</h3>
+        <app-institucion-table
+        [instituciones]="instituciones"           
+        [paises]="paises"
+        [pageIndex]="instPageIndex"
+        [pageSize]="instPageSize"
+        [total]="instTotal"
+        (pageChange)="onInstPageChange($event)"
+        (edit)="onEditInstitucion($event)"
+      />
       </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium">Nombre</label>
-      <input formControlName="nombre" type="text" class="w-full border rounded p-2" />
-      <div *ngIf="institucionForm.get('nombre')?.touched && institucionForm.get('nombre')?.invalid" class="text-red-500 text-xs mt-1">
-        <span *ngIf="institucionForm.get('nombre')?.errors?.['required']">El nombre es obligatorio.</span>
-        <span *ngIf="institucionForm.get('nombre')?.errors?.['maxlength']">Máximo 250 caracteres.</span>
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium">Dirección</label>
-      <input formControlName="direccion" type="text" class="w-full border rounded p-2" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium">Representante Legal</label>
-      <input formControlName="representanteLegal" type="text" class="w-full border rounded p-2" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium">Correo</label>
-      <input formControlName="correo" type="email" class="w-full border rounded p-2" />
-      <div *ngIf="institucionForm.get('correo')?.touched && institucionForm.get('correo')?.invalid" class="text-red-500 text-xs mt-1">
-        <span *ngIf="institucionForm.get('correo')?.errors?.['email']">El correo debe ser válido.</span>
-      </div>
-    </div>
-    <div>
-      <label class="block text-sm font-medium">Teléfono</label>
-      <input formControlName="telefono" type="text" class="w-full border rounded p-2" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium">País</label>
-      <select formControlName="paisIso" class="w-full border rounded p-2">
-        <option value="">Seleccione un país</option>
-        <option *ngFor="let p of paises" [value]="p.codigoISO">{{ p.nombre }}</option>
-      </select>
-      <div *ngIf="institucionForm.get('paisIso')?.touched && institucionForm.get('paisIso')?.invalid" class="text-red-500 text-xs mt-1">
-        <span *ngIf="institucionForm.get('paisIso')?.errors?.['required']">El país es obligatorio.</span>
-      </div>
-    </div>
-    <div class="flex justify-end gap-3 mt-4">
-      <button type="button" (click)="institucionForm.reset()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
-      <button type="button" (click)="saveInstitucion()" class="px-4 py-2 bg-green-600 rounded text-white">Guardar</button>
-    </div>
-  </form>
-
-  <!-- TABLA DE INSTITUCIONES -->
-  <div class="mt-8 overflow-x-auto">
-    <h3 class="text-lg font-semibold mb-3">Listado de Instituciones</h3>
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="px-4 py-2 border text-left">Código</th>
-          <th class="px-4 py-2 border text-left">Nombre</th>
-          <th class="px-4 py-2 border text-left">Dirección</th>
-          <th class="px-4 py-2 border text-left">Representante Legal</th>
-          <th class="px-4 py-2 border text-left">Correo</th>
-          <th class="px-4 py-2 border text-left">Teléfono</th>
-          <th class="px-4 py-2 border text-left">País</th>
-          <th class="px-4 py-2 border text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let inst of instituciones; let i = index" class="hover:bg-gray-50">
-          <td class="px-4 py-2 border align-top">{{ inst.codigo }}</td>
-          <td class="px-4 py-2 border align-top">
-            <div class="font-medium">{{ inst.nombre }}</div>
-          </td>
-          <td class="px-4 py-2 border align-top">{{ inst.direccion || '—' }}</td>
-          <td class="px-4 py-2 border align-top">{{ inst.representanteLegal || '—' }}</td>
-          <td class="px-4 py-2 border align-top">{{ inst.correo || '—' }}</td>
-          <td class="px-4 py-2 border align-top">{{ inst.telefono || '—' }}</td>
-          <td class="px-4 py-2 border align-top">{{ nombrePaisDeInstitucion(inst.id) }}</td>
-          <td class="px-4 py-2 border text-center align-top">
-            <button (click)="editInstitucion(inst)" class="px-2 py-1 bg-yellow-500 text-white rounded mr-1">Editar</button>
-          </td>
-        </tr>
-        <tr *ngIf="instituciones.length === 0">
-          <td colspan="8" class="px-4 py-4 text-center text-gray-500">No hay instituciones</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    </section>
+  }
 </div>

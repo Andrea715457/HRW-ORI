@@ -1,0 +1,47 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-4 py-2 border text-left">Código</th>
+        <th class="px-4 py-2 border text-left">Nombre</th>
+        <th class="px-4 py-2 border text-left">Dirección</th>
+        <th class="px-4 py-2 border text-left">Representante Legal</th>
+        <th class="px-4 py-2 border text-left">Correo</th>
+        <th class="px-4 py-2 border text-left">Teléfono</th>
+        <th class="px-4 py-2 border text-left">País</th>
+        <th class="px-4 py-2 border text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (inst of instituciones; track inst.id) {
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 border">{{ inst.codigo }}</td>
+          <td class="px-4 py-2 border"><div class="font-medium">{{ inst.nombre }}</div></td>
+          <td class="px-4 py-2 border">{{ inst.direccion || '—' }}</td>
+          <td class="px-4 py-2 border">{{ inst.representanteLegal || '—' }}</td>
+          <td class="px-4 py-2 border">{{ inst.correo || '—' }}</td>
+          <td class="px-4 py-2 border">{{ inst.telefono || '—' }}</td>
+          <td class="px-4 py-2 border">{{ inst.nombre_pais }}</td>
+          <td class="px-4 py-2 border text-center">
+            <button (click)="edit.emit(inst)" class="px-2 py-1 bg-yellow-500 text-white rounded">Editar</button>
+          </td>
+        </tr>
+      }
+      @if (instituciones.length === 0) {
+        <tr><td colspan="8" class="px-4 py-4 text-center text-gray-500">No hay instituciones</td></tr>
+      }
+    </tbody>
+  </table>
+
+  <!-- Paginador simple -->
+  <div class="flex items-center justify-between mt-3">
+    <div class="text-sm text-gray-600">
+      Mostrando {{ start() }}–{{ end() }} de {{ total }}
+    </div>
+    <div class="flex gap-2">
+      <button class="px-3 py-1 rounded bg-gray-100" (click)="prev()" [disabled]="pageIndex === 0">Anterior</button>
+      <button class="px-3 py-1 rounded bg-gray-100"
+              (click)="next()" [disabled]="(pageIndex + 1) * pageSize >= total">Siguiente</button>
+    </div>
+  </div>
+</div>

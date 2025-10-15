@@ -1,0 +1,56 @@
+<form [formGroup]="form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <label class="block text-sm font-medium">Código</label>
+    <input formControlName="codigo" type="text" class="w-full border rounded p-2"/>
+    @if (form.get('codigo')?.touched && form.get('codigo')?.invalid) {
+      <div class="text-red-500 text-xs mt-1">
+        @if (form.get('codigo')?.errors?.['required']) {<span>El código es obligatorio.</span>}
+        @if (form.get('codigo')?.errors?.['pattern']) {<span>Solo letras mayúsculas, números y guiones.</span>}
+      </div>
+    }
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium">Nombre</label>
+    <input formControlName="nombre" type="text" class="w-full border rounded p-2"/>
+    @if (form.get('nombre')?.touched && form.get('nombre')?.invalid) {
+      <div class="text-red-500 text-xs mt-1">
+        @if (form.get('nombre')?.errors?.['required']) {<span>El nombre es obligatorio.</span>}
+        @if (form.get('nombre')?.errors?.['maxlength']) {<span>Máximo 250 caracteres.</span>}
+      </div>
+    }
+  </div>
+
+  <div><label class="block text-sm font-medium">Dirección</label><input formControlName="direccion" type="text" class="w-full border rounded p-2"/></div>
+  <div><label class="block text-sm font-medium">Representante Legal</label><input formControlName="representanteLegal" type="text" class="w-full border rounded p-2"/></div>
+
+  <div>
+    <label class="block text-sm font-medium">Correo</label>
+    <input formControlName="correo" type="email" class="w-full border rounded p-2"/>
+    @if (form.get('correo')?.touched && form.get('correo')?.invalid) {
+      <div class="text-red-500 text-xs mt-1">
+        @if (form.get('correo')?.errors?.['email']) {<span>El correo debe ser válido.</span>}
+      </div>
+    }
+  </div>
+
+  <div><label class="block text-sm font-medium">Teléfono</label><input formControlName="telefono" type="text" class="w-full border rounded p-2"/></div>
+
+  <div>
+    <label class="block text-sm font-medium">País</label>
+    <select formControlName="paisIso" class="w-full border rounded p-2">
+      <option value="">Seleccione un país</option>
+      @for (p of paises; track p.codigoISO) {
+        <option [value]="p.codigoISO">{{ p.nombre }}</option>
+      }
+    </select>
+    @if (form.get('paisIso')?.touched && form.get('paisIso')?.invalid) {
+      <div class="text-red-500 text-xs mt-1"><span>El país es obligatorio.</span></div>
+    }
+  </div>
+
+  <div class="md:col-span-2 flex justify-end gap-3 mt-4">
+    <button type="button" (click)="onCancel()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
+    <button type="button" (click)="onSubmit()" class="px-4 py-2 bg-green-600 rounded text-white">Guardar</button>
+  </div>
+</form>

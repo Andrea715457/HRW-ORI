@@ -1,0 +1,98 @@
+<form [formGroup]="form" class="space-y-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium">Código</label>
+      <input formControlName="codigo" type="text" class="w-full border rounded p-2"/>
+      @if (form.get('codigo')?.touched && form.get('codigo')?.invalid) {
+        <div class="text-red-500 text-xs mt-1">
+          @if (form.get('codigo')?.errors?.['required']) { <span>El código es obligatorio.</span> }
+          @if (form.get('codigo')?.errors?.['pattern']) { <span>Solo letras mayúsculas, números y guiones.</span> }
+        </div>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Nombre</label>
+      <input formControlName="nombre" type="text" class="w-full border rounded p-2"/>
+      @if (form.get('nombre')?.touched && form.get('nombre')?.invalid) {
+        <div class="text-red-500 text-xs mt-1">
+          @if (form.get('nombre')?.errors?.['required']) { <span>El nombre es obligatorio.</span> }
+          @if (form.get('nombre')?.errors?.['maxlength']) { <span>Máximo 250 caracteres.</span> }
+        </div>
+      }
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Tipo de Convenio</label>
+      <input formControlName="tipoConvenio" type="text" class="w-full border rounded p-2"/>
+      @if (form.get('tipoConvenio')?.touched && form.get('tipoConvenio')?.invalid) {
+        <div class="text-red-500 text-xs mt-1"><span>El tipo de convenio es obligatorio.</span></div>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium">Fecha Inicio</label>
+        <input formControlName="fechaInicio" type="date" class="w-full border rounded p-2"/>
+        @if (form.get('fechaInicio')?.touched && form.get('fechaInicio')?.invalid) {
+          <div class="text-red-500 text-xs mt-1"><span>La fecha de inicio es obligatoria.</span></div>
+        }
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Fecha Finalización</label>
+        <input formControlName="fechaFinalizacion" type="date" class="w-full border rounded p-2"/>
+        @if (form.get('fechaFinalizacion')?.touched && form.get('fechaFinalizacion')?.invalid) {
+          <div class="text-red-500 text-xs mt-1"><span>La fecha de finalización es obligatoria.</span></div>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Estado</label>
+      <select formControlName="estado" class="w-full border rounded p-2">
+        <option value="activo">Activo</option>
+        <option value="inactivo">Inactivo</option>
+        <option value="pendiente">Pendiente</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Institución</label>
+      <select formControlName="institucionId" class="w-full border rounded p-2">
+        @for (inst of instituciones; track inst.id) {
+          <option [value]="inst.id">{{ inst.nombre }}</option>
+        }
+      </select>
+      @if (form.get('institucionId')?.touched && form.get('institucionId')?.invalid) {
+        <div class="text-red-500 text-xs mt-1"><span>La institución es obligatoria.</span></div>
+      }
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium">Tipos de Movilidad</label>
+    <div formArrayName="tipos" class="space-y-2">
+      @if (form.get('tipos')?.touched && form.get('tipos')?.invalid) {
+        <div class="text-red-500 text-xs mt-1"><span>Debe seleccionar al menos un tipo de movilidad.</span></div>
+      }
+      @for (ctrl of tipos.controls; track $index) {
+        <div [formGroupName]="$index" class="flex gap-2 items-center">
+          <select formControlName="tipoCodigo" class="flex-1 border rounded p-2">
+            <option value="">Seleccione un tipo</option>
+            @for (tm of tiposMovilidad; track tm.codigo) {
+              <option [value]="tm.codigo">{{ tm.nombre }}</option>
+            }
+          </select>
+          <button type="button" class="px-2 py-1 bg-red-500 text-white rounded disabled:bg-gray-300"
+                  [disabled]="tipos.length===1" (click)="removeTipo($index)">x</button>
+        </div>
+      }
+    </div>
+    <button type="button" (click)="addTipo()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded">+ Agregar Tipo</button>
+  </div>
+
+  <div class="flex justify-end gap-3 mt-4">
+    <button type="button" (click)="onCancel()" class="px-4 py-2 bg-gray-400 rounded text-white">Cancelar</button>
+    <button type="button" (click)="onSubmit()" class="px-4 py-2 bg-blue-600 rounded text-white">Guardar</button>
+  </div>
+</form>
