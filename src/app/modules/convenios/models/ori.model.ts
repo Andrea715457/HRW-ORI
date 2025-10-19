@@ -23,7 +23,6 @@ export interface Pais {
 }
 
 export type EstadoConvenio = 'activo' | 'inactivo' | 'pendiente';
-
 export interface ConvenioTipo { tipoCodigo: string; }
 
 export interface Convenio {
@@ -31,9 +30,12 @@ export interface Convenio {
   codigo: string;
   nombre: string;
   tipoConvenio: string;
-  fechaInicio: string;        // ISO yyyy-MM-dd
-  fechaFinalizacion: string;  // ISO yyyy-MM-dd
-  estado: EstadoConvenio;
-  institucionId: number;
-  tipos: ConvenioTipo[];
+  fechaInicio: string;
+  fechaFinalizacion: string;
+  estado: 'activo' | 'inactivo' | 'pendiente';
+  institucionCodigo: string;        // cuando lo tengamos (GET por código)
+  nombres?: never;                  // evita typos
+  nombreInstitucion?: string;       // 👈 NEW: viene del listado
+  institucionId?: number;           // opcional por compatibilidad
+  tipos: { tipoCodigo: string }[];
 }

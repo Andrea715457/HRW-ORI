@@ -8,6 +8,7 @@ import InstitucionTableComponent from './components/institucion/institucion-tabl
 import { UtilsService } from '../../core/services/utils.service';
 import { take } from 'rxjs/operators';
 import { InstitucionesService } from '../../core/services/instituciones.service';
+import { ConveniosService } from '../../core/services/Convenios.service';
 
 type Vista = 'convenio'|'institucion';
 
@@ -47,11 +48,15 @@ export default class ConveniosComponent {
   // selección actual (para editar)
   private _selectedInstitucion = signal<Institucion|null>(null);
   selectedInstitucion = () => this._selectedInstitucion()
-  convenios: Convenio[] = [
-    { id:1, codigo:'CONV001', nombre:'Convenio A', tipoConvenio:'Marco', fechaInicio:'2024-01-01', fechaFinalizacion:'2025-01-01', estado:'activo', institucionId:1, tipos:[{tipoCodigo:'T1'},{tipoCodigo:'T2'},{tipoCodigo:'T3'}]},
-    { id:2, codigo:'CONV002', nombre:'Convenio B', tipoConvenio:'Específico', fechaInicio:'2023-05-01', fechaFinalizacion:'2024-05-01', estado:'inactivo', institucionId:2, tipos:[{tipoCodigo:'T2'}]},
-  ];
-  
+
+  private convSrv = inject(ConveniosService);
+
+  // signals
+  convenios = signal<Convenio[]>([]);
+  convTotal = signal(0);
+  convPageIndex = signal(0);
+  convPageSize = signal(25);
+    
   ngOnInit(): void {
      // Catálogos existentes
       this.utils.getPaises().pipe(take(1)).subscribe({ next: p => this.paises = p });
@@ -62,6 +67,7 @@ export default class ConveniosComponent {
 
       // cargar página tabla
       this.loadInstitucionesPage();
+      this.loadConveniosPage();
 
       // cargar opciones select (lote grande)
       this.instSrv.getInstituciones({ skip: 0, limit: 1000 }).subscribe({
@@ -148,19 +154,74 @@ export default class ConveniosComponent {
   }
   // CONVENIOS LOGICA
   // selección para editar
-  private _selectedConvenio = signal<Convenio|null>(null);
+  // selección actual para editar
+  private _selectedConvenio = signal<Convenio | null>(null);
   selectedConvenio = () => this._selectedConvenio();
 
-  onEditConvenio(c: Convenio){ this._selectedConvenio.set(c); this.setView('convenio'); }
-  clearConvenioSelection(){ this._selectedConvenio.set(null); }
-  onSaveConvenio(payload: Omit<Convenio,'id'> & {id?: number|null}) {
-    if (payload.id) {
-      this.convenios = this.convenios.map(c => c.id === payload.id! ? { ...(payload as Convenio), id: payload.id! } : c);
+  // editar (GET por código)
+  onEditConvenio(row: Convenio) {
+    this.convSrv.getConvenioByCodigo(row.codigo).subscribe({
+      next: (apiConv) => {
+        if (!apiConv) { alert('Convenio no encontrado'); return; }
+        this._selectedConvenio.set(apiConv);
+        this.editingCodigo.set(row.codigo);
+        this.setView('convenio');
+      },
+      error: (e) => console.error('GET convenio', e),
+    });
+  }
+
+// limpiar selección
+  clearConvenioSelection() {
+    this._selectedConvenio.set(null);
+    this.editingCodigo.set(null);
+  }
+
+  // crear / editar (POST o PUT)
+  onSaveConvenio(payload: any) {
+    const codeForPut = this.editingCodigo();
+
+    if (codeForPut) {
+      this.convSrv.updateConvenio(codeForPut, payload).subscribe({
+        next: () => { this.loadConveniosPage(); this.clearConvenioSelection(); },
+        error: (e) => console.error('PUT convenio', e.error?.detail || e.message || e),
+      });
     } else {
-      const newId = Math.max(0, ...this.convenios.map(c=>c.id)) + 1;
-      this.convenios = [...this.convenios, { ...(payload as Convenio), id: newId }];
+      this.convSrv.createConvenio(payload).subscribe({
+        next: () => { this.loadConveniosPage(); this.clearConvenioSelection(); },
+        error: (e) => console.error('POST convenio', e.error?.detail || e.message || e),
+      });
     }
-    this.clearConvenioSelection();
+  }
+
+
+  // eliminar
+  onRemoveConvenio(conv: Convenio) {
+    if (!confirm(`¿Eliminar "${conv.nombre}" (${conv.codigo})?`)) return;
+    this.convSrv.deleteConvenio(conv.codigo).subscribe({
+      next: () => {
+        this.loadConveniosPage();
+        this.convenios.update(list => list.filter(c => c.codigo !== conv.codigo));
+        if (this.selectedConvenio()?.codigo === conv.codigo) this.clearConvenioSelection();
+      },
+      error: (e) => console.error('DELETE convenio', e),
+    });
+  }
+
+  loadConveniosPage() {
+  const skip = this.convPageIndex() * this.convPageSize();
+  this.convSrv.getConvenios({ skip, limit: this.convPageSize() }).subscribe({
+    next: (res) => {
+      this.convenios.set(res.data);
+      this.convTotal.set(res.total);
+    },
+    error: (e) => console.error('Error al cargar convenios', e)
+    });
+  }
+  onConvPageChange(e: { pageIndex: number; pageSize: number }) {
+    this.convPageIndex.set(e.pageIndex);
+    this.convPageSize.set(e.pageSize);
+    this.loadConveniosPage();
   }
 
 }

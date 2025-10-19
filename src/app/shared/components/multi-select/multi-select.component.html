@@ -1,0 +1,34 @@
+<div class="border rounded p-2 min-h-[42px] flex flex-wrap gap-1 items-center"
+     (click)="focusInput(input)">
+  @for (code of value(); let i = $index; track code) {
+    <span class="inline-flex items-center bg-gray-100 rounded px-2 py-1 text-xs">
+      {{ displayName(code) }}
+      <button type="button" class="ml-1 text-gray-500 hover:text-gray-700"
+              (click)="removeAt(i)" aria-label="Eliminar">×</button>
+    </span>
+    @if (i < value().length - 1) { <span class="text-gray-500">,</span> }
+  }
+  <input #input
+         type="text"
+         [placeholder]="placeholder"
+         class="flex-1 min-w-[120px] outline-none p-1"
+         (input)="query.set(input.value)"
+         (keydown)="handleKeydown($event)"
+         (focus)="open.set(true)"
+         (blur)="onBlurDeferred()">
+</div>
+
+<div class="relative">
+  @if (open() && filtered().length) {
+    <ul class="absolute z-10 mt-1 max-h-56 overflow-auto bg-white border rounded shadow w-full">
+      @for (opt of filtered(); track opt.codigo) {
+        <li class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+            (mousedown)="$event.preventDefault()"  
+            (click)="addByOption(opt)">
+          <div class="text-sm">{{ opt.nombre }}</div>
+          <div class="text-[11px] text-gray-500">{{ opt.codigo }}</div>
+        </li>
+      }
+    </ul>
+  }
+</div>

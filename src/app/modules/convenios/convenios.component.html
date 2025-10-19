@@ -24,12 +24,17 @@
 
       <div class="mt-8">
         <h3 class="text-lg font-semibold mb-3">Listado de Convenios</h3>
-        <app-convenio-table
-          [convenios]="convenios"
-          [instituciones]="institucionesOptions()"        
-          [tiposMovilidad]="tiposMovilidad"
-          (edit)="onEditConvenio($event)"
-        />
+      <app-convenio-table
+        [convenios]="convenios()"
+        [instituciones]="institucionesOptions()"
+        [tiposMovilidad]="tiposMovilidad"
+        [total]="convTotal()"
+        [pageIndex]="convPageIndex()"
+        [pageSize]="convPageSize()"
+        (edit)="onEditConvenio($event)"
+        (remove)="onRemoveConvenio($event)"
+        (pageChange)="onConvPageChange($event)">
+      </app-convenio-table>
       </div>
     </section>
   } @else {
