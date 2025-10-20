@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { Institucion } from '../../modules/convenios/models/ori.model';
+import { Institucion } from '../models/ori.model';
 
 const BASE = 'http://127.0.0.1:8888/api';
 

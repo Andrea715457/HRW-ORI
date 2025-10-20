@@ -1,26 +1,26 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Institucion, Pais } from '../../../../../core/models/ori.model';
+import { Usuario } from '../../../core/models/usuario.model';
 
 @Component({
-  selector: 'app-institucion-table',
+  selector: 'app-user-table',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './institucion-table.component.html',
+  templateUrl: './user-table.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export default class InstitucionTableComponent {
-  @Input({ required: true }) instituciones: Institucion[] = [];
-  @Input({ required: true }) paises: Pais[] = [];
+export default class UserTableComponent {
+  @Input({ required: true }) usuarios: Usuario[] = [];
+
   @Input() pageIndex = 0;
   @Input() pageSize = 25;
   @Input() total = 0;
 
-  @Output() edit = new EventEmitter<Institucion>();
+  @Output() edit = new EventEmitter<Usuario>();
+  @Output() deactivate = new EventEmitter<Usuario>();
+  @Output() activate = new EventEmitter<Usuario>();
+  @Output() resetPass = new EventEmitter<Usuario>();
   @Output() pageChange = new EventEmitter<{ pageIndex: number; pageSize: number }>();
-  @Output() remove = new EventEmitter<Institucion>();
-
-  paisNombre(iso: string){ return this.paises.find(p=>p.codigoISO===iso)?.nombre ?? '—'; }
 
   prev() {
     if (this.pageIndex > 0) this.pageChange.emit({ pageIndex: this.pageIndex - 1, pageSize: this.pageSize });

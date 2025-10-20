@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { Convenio } from '../../modules/convenios/models/ori.model';
+import { Convenio } from '../models/ori.model';
 
 @Injectable({ providedIn: 'root' })
 export class ConveniosService {

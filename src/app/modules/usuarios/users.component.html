@@ -1,0 +1,26 @@
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">Gestión de usuarios</h2>
+    <button class="px-3 py-2 rounded bg-blue-600 text-white"
+            (click)="startCreate()">
+    Nuevo usuario
+    </button>
+
+</div>
+
+<app-user-form
+  [initial]="selected()"
+  (submitted)="selected()?.id ? onUpdate($event) : onCreate($event)"
+  (canceled)="onCancel()">
+</app-user-form>
+
+<app-user-table
+  [usuarios]="users()"
+  [pageIndex]="pageIndex()"
+  [pageSize]="pageSize()"
+  [total]="total()"
+  (pageChange)="onPageChange($event)"
+  (edit)="onEdit($event)"
+  (deactivate)="onDeactivate($event)"
+  (activate)="onActivate($event)"
+  (resetPass)="onSendReset($event)">
+</app-user-table>
