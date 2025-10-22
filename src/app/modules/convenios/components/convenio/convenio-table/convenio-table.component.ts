@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Convenio, Institucion, TipoMovilidad } from '../../../models/ori.model';
+import { Convenio, Institucion, TipoMovilidad } from '../../../../../core/models/ori.model';
 
 @Component({
   selector: 'app-convenio-table',

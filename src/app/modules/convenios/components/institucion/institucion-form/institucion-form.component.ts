@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Institucion, Pais } from '../../../models/ori.model';
+import { Institucion, Pais } from '../../../../../core/models/ori.model';
 
 @Component({
   selector: 'app-institucion-form',

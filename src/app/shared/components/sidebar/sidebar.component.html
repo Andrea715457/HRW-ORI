@@ -19,6 +19,7 @@
   </div>
   <div class="m-4">
     <ul class="mb-4 flex flex-col gap-1">
+      <!-- DASHBOARD -->
       <li>
         <a routerLink="/auth/dashboard">
           <button routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 !text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-85" [routerLinkActiveOptions]="{ exact: true }" class="w-full flex items-center gap-4 px-4 py-3 text-xs sm:text-sm font-bold text-white rounded-lg hover:bg-white/10 active:bg-white/30 transition-all capitalize" type="button">
@@ -29,7 +30,8 @@
           </button>
         </a>
       </li>
-      <li>
+      <!-- CRUDS CONVENIOS E INSTITUCIONES -->
+      <li  *appHasRole="['director']">
         <a routerLink="/auth/convenios">
           <button routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 !text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-85" [routerLinkActiveOptions]="{ exact: true }" class="w-full flex items-center gap-4 px-4 py-3 text-xs sm:text-sm font-bold text-white rounded-lg hover:bg-white/10 active:bg-white/30 transition-all capitalize" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 0 512 512" class="w-5 h-5 sm:w-6 sm:h-6 text-inherit" fill="currentColor" aria-hidden="true">
@@ -39,7 +41,8 @@
           </button>
         </a>
       </li>
-      <li>
+      <!-- SNIES -->
+      <li *appHasRole="['director']">
         <a routerLink="/auth/snies">
           <button routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 !text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-85" [routerLinkActiveOptions]="{ exact: true }" class="w-full flex items-center gap-4 px-4 py-3 text-xs sm:text-sm font-bold text-white rounded-lg hover:bg-white/10 active:bg-white/30 transition-all capitalize" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 sm:w-6 sm:h-6 text-inherit" fill="currentColor" aria-hidden="true">
@@ -52,13 +55,33 @@
           </button>
         </a>
       </li>
-      <li>
+      <!-- CARGAR EXCEL -->
+      <li *appHasRole="['coordinador']">
         <a routerLink="/auth/cargar-excel">
           <button routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 !text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-85" [routerLinkActiveOptions]="{ exact: true }" class="w-full flex items-center gap-4 px-4 py-3 text-xs sm:text-sm font-bold text-white rounded-lg hover:bg-white/10 active:bg-white/30 transition-all capitalize" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-5 h-5 sm:w-6 sm:h-6 text-inherit" fill="currentColor" aria-hidden="true">
               <path d="M296 384h-80c-13.3 0-24-10.7-24-24V192h-87.7c-17.8 0-26.7-21.5-14.1-34.1L242.3 5.7c7.5-7.5 19.8-7.5 27.3 0l152.2 152.2c12.6 12.6 3.7 34.1-14.1 34.1H320v168c0 13.3-10.7 24-24 24zm216-8v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h136v8c0 30.9 25.1 56 56 56h80c30.9 0 56-25.1 56-56v-8h136c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"/>
             </svg>
             <p class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">Cargar de Excel</p>
+          </button>
+        </a>
+      </li>
+      <!-- USUARIOS -->
+      <li *appHasRole="['admin']">
+        <a routerLink="/auth/admin/usuarios">
+          <button
+            routerLinkActive="bg-gradient-to-tr from-blue-600 to-blue-400 !text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/40 active:opacity-85"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="w-full flex items-center gap-4 px-4 py-3 text-xs sm:text-sm font-bold text-white rounded-lg hover:bg-white/10 active:bg-white/30 transition-all capitalize"
+            type="button">
+            <!-- ícono usuarios -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"
+                class="w-5 h-5 sm:w-6 sm:h-6 text-inherit" fill="currentColor" aria-hidden="true">
+              <path d="M96 224a96 96 0 1 1 192 0A96 96 0 1 1 96 224zm288 0a112 112 0 1 1 224 0 112 112 0 1 1 -224 0zM0 482.3C0 383.8 79.8 304 178.3 304h27.4C304.2 304 384 383.8 384 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM432 480c0-45.3-13.9-87.3-37.7-121.8C432.4 333.7 473.5 320 517.7 320h26.6C611.4 320 672 380.6 672 454.3 672 485.4 646.4 512 615.3 512H461.3C444.1 512 432 499 432 480z"/>
+            </svg>
+            <p class="block antialiased font-sans text-base leading-relaxed text-inherit font-medium capitalize">
+              usuarios
+            </p>
           </button>
         </a>
       </li>

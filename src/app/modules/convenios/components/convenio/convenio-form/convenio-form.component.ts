@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import {
   FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators,
   AbstractControl, ValidationErrors, ValidatorFn, FormControl
-} from '@angular/forms';import { Convenio, Institucion, TipoMovilidad } from '../../../models/ori.model';
+} from '@angular/forms';import { Convenio, Institucion, TipoMovilidad } from '../../../../../core/models/ori.model';
 import {MultiSelectComponent} from '../../../../../shared/components/multi-select/multi-select.component'
 @Component({
   selector: 'app-convenio-form',

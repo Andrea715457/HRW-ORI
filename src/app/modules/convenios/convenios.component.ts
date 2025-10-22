@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Convenio, Institucion, Pais, TipoMovilidad } from './models/ori.model';
+import { Convenio, Institucion, Pais, TipoMovilidad } from '../../core/models/ori.model';
 import { ConvenioFormComponent } from './components/convenio/convenio-form/convenio-form.component';
 import ConvenioTableComponent from './components/convenio/convenio-table/convenio-table.component';
 import InstitucionFormComponent from './components/institucion/institucion-form/institucion-form.component';

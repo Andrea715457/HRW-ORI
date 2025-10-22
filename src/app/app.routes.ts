@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { NoAuthLayoutComponent } from './layouts/no-auth-layout/no-auth-layout.component';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { RoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
     {
@@ -34,11 +35,16 @@ export const routes: Routes = [
                 path: 'cargar-excel',
                 loadComponent: () => import('./modules/cargar/cargar.component')
             },
-            {
-                path: '**',
-                redirectTo: 'auth'
-            }
-        ]
+                  {
+        path: 'admin/usuarios',
+        canActivate: [RoleGuard],
+        data: { roles: ['admin'] },
+        loadComponent: () => import('./modules/usuarios/users.component').then(m => m.default)
+      },
+
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '**', redirectTo: 'dashboard' } 
+    ]
     },
     {
         path: '**',

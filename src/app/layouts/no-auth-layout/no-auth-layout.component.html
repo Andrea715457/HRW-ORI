@@ -36,12 +36,33 @@
           </div>
 
           <div class="flex items-center justify-between">
-            <label class="flex items-center">
-              <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-              <span class="ml-2 text-sm text-gray-600">Recuérdame</span>
-            </label>
-            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">¿Olvidaste tu contraseña?</a>
-          </div>
+            <div class="relative inline-block" #tipWrap>
+              <button type="button"
+                      class="text-sm text-indigo-600 hover:text-indigo-500"
+                      (click)="toggleTip($event)"
+                      aria-describedby="forgot-tip"
+                      aria-expanded="{{ showTip }}">
+                ¿Olvidaste tu contraseña?
+              </button>
+
+              @if (showTip) {
+                <div id="forgot-tip"
+                    class="absolute left-0 mt-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-3 shadow-lg z-50"
+                    role="tooltip">
+                  <div class="absolute -top-1 left-5 w-2 h-2 bg-gray-800 rotate-45"></div>
+                  <div class="flex items-start gap-2">
+                    <!-- ícono info -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-none mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 102 0V9a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>
+                      Contacta con tu administrador para restablecer tu contraseña.
+                    </span>
+                  </div>
+                </div>
+              }
+          </div>          
+      </div>
 
           <button
             type="submit"

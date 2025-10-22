@@ -1,0 +1,59 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-4 py-2 border text-left">Usuario</th>
+        <th class="px-4 py-2 border text-left">Nombre</th>
+        <th class="px-4 py-2 border text-left">Correo</th>
+        <th class="px-4 py-2 border text-left">Rol</th>
+        <th class="px-4 py-2 border text-left">Estado</th>
+        <th class="px-4 py-2 border text-left">Último acceso</th>
+        <th class="px-4 py-2 border text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of usuarios; track u.id) {
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 border font-medium">{{ u.usuario }}</td>
+          <td class="px-4 py-2 border">{{ u.nombre || '—' }}</td>
+          <td class="px-4 py-2 border">{{ u.correo || '—' }}</td>
+          <td class="px-4 py-2 border capitalize">{{ u.rol }}</td>
+          <td class="px-4 py-2 border">
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold"
+              [class.bg-green-100]="u.estado==='Activo'" [class.text-green-800]="u.estado==='Activo'"
+              [class.bg-red-100]="u.estado==='Inactivo'" [class.text-red-800]="u.estado==='Inactivo'">
+              {{ u.estado }}
+            </span>
+          </td>
+          <td class="px-4 py-2 border">{{ u.ultimo_acceso ? (u.ultimo_acceso | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td class="px-4 py-2 border">
+            <div class="flex gap-2 justify-center">
+              <button class="px-2 py-1 bg-yellow-500 text-white rounded" (click)="edit.emit(u)">Editar</button>
+              @if (u.estado === 'Activo') {
+                <button class="px-2 py-1 bg-red-600 text-white rounded" (click)="deactivate.emit(u)">Desactivar</button>
+              } @else {
+                <button class="px-2 py-1 bg-green-600 text-white rounded" (click)="activate.emit(u)">Activar</button>
+              }
+              <button class="px-2 py-1 bg-blue-600 text-white rounded" (click)="resetPass.emit(u)">Reset clave</button>
+            </div>
+          </td>
+        </tr>
+      }
+      @if (usuarios.length === 0) {
+        <tr><td colspan="7" class="px-4 py-4 text-center text-gray-500">No hay usuarios</td></tr>
+      }
+    </tbody>
+  </table>
+
+  <!-- Paginador -->
+  <div class="flex items-center justify-between mt-3">
+    <div class="text-sm text-gray-600">
+      Mostrando {{ start() }}–{{ end() }} de {{ total }}
+    </div>
+    <div class="flex gap-2">
+      <button class="px-3 py-1 rounded bg-gray-100" (click)="prev()" [disabled]="pageIndex === 0">Anterior</button>
+      <button class="px-3 py-1 rounded bg-gray-100"
+              (click)="next()" [disabled]="(pageIndex + 1) * pageSize >= total">Siguiente</button>
+    </div>
+  </div>
+</div>
