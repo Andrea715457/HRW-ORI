@@ -1,298 +1,437 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
-declare var Chart: any; // Declarar Chart para usar Chart.js desde CDN
-declare const google: any;
+import { ChangeDetectionStrategy, Component, AfterViewInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { DashboardService } from '../../core/services/dashboard.service';
+import { Chart, registerables, ChartConfiguration } from 'chart.js';
+import { CommonModule } from '@angular/common';
+import { forkJoin, Subscription, of } from 'rxjs';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { FormsModule } from '@angular/forms';
+import { catchError } from 'rxjs/operators';
+
+Chart.register(...registerables);
+Chart.register(ChartDataLabels);
 
 @Component({
   selector: 'app-dashboard',
-  // imports: [], // no need aquí
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements AfterViewInit, OnDestroy {
-  // KPI values (mock)
-  totalConvenios = 55;
-  convenios = 2;
-  pctUsados = 0.67;
-  pctActivos = 0.6;
+  kpis: any = {};
+  periodo = { anio: 2024, semestre: 1 };
+  periodoKpis: any = { total: 0, entrantes: 0, salientes: 0, topPais: null };
 
-  // Canvas refs (donuts)
-  @ViewChild('studentInCanvas') studentInCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('studentOutCanvas') studentOutCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('teacherInCanvas') teacherInCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('teacherOutCanvas') teacherOutCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('adminInCanvas') adminInCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('adminOutCanvas') adminOutCanvas!: ElementRef<HTMLCanvasElement>;
+  // Tablas: top & bottom para origen y destino
+  topPaisesOrigen: any[] = [];
+  topPaisesDestino: any[] = [];
+  bottomPaisesOrigen: any[] = [];
+  bottomPaisesDestino: any[] = [];
 
-  // Program bar canvas
-  @ViewChild('programCanvas') programCanvas!: ElementRef<HTMLCanvasElement>;
+  // Chart control
+  private chartMap: Record<string, Chart> = {};
+  private subs: Subscription[] = [];
 
-  // stacked bar canvas
-  @ViewChild('stackedCanvas') stackedCanvas!: ElementRef<HTMLCanvasElement>;
+  // Paleta fija: azul, naranja, rojo, verde (cyclical)
+  private PALETTE = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c'];
+  private NEUTRAL_COLOR = '#9CA3AF'; // Color neutral para gráficas de 1 distinción (Bug 3 FIX)
 
-  // pies (inferior)
-  @ViewChild('pieStudentOut') pieStudentOut!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('pieStudentIn') pieStudentIn!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('pieTeacherOut') pieTeacherOut!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('pieTeacherIn') pieTeacherIn!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('pieAdminIn') pieAdminIn!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('pieAdminOut') pieAdminOut!: ElementRef<HTMLCanvasElement>;
+  constructor(
+    private dashboardService: DashboardService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
 
-  // registry of charts to resize/destroy
-  private charts: any[] = [];
+  ngAfterViewInit() {
+    // Llamada inicial
+    this.loadAll();
+  }
 
-  // program chart (kept for convenience)
-  private programChart: any;
-  private stackedChart: any;
+  ngOnDestroy() {
+    Object.values(this.chartMap).forEach(c => c.destroy());
+    this.subs.forEach(s => s.unsubscribe());
+  }
 
-  // Datos de ejemplo (usar nombres consistentes)
-  programs = ['Sistemas', 'Civil', 'Derecho', 'Administración de empresas', 'Electrónica'];
-  presencialCounts = [9, 7, 7, 2, 0];
-  virtualCounts = [2, 5, 7, 6, 2];
+  // ---------------- Orquestador ----------------
+  loadAll() {
+    // Carga inmediata de datos (KPIs y Tablas)
+    this.loadKPIs();
+    this.loadPeriodoKPIs(this.periodo.anio, this.periodo.semestre);
+    this.loadTables();
 
-  convenioLabels = ['CON-AK31','CON-AK27','CON-AK24','CON-AK30','CON-AK29','CON-AK22','CON-AK32','CON-AK21','CON-AK25','CON-AK28'];
-  // usa nombres descriptivos y consistentes
-  virtualData =        [10,  11,  9,   8,   7,   5,   6,   7,   6,   5];
-  presencialData =     [15,  14,  12,  10,  12,  9,   8,   9,   11,  9];
-
-  ngAfterViewInit(): void {
-    // Esperar un poco para que Tailwind aplique clases y DOM esté listo
+    // Retraso corto para asegurar que los <canvas> están en el DOM antes de crear charts
     setTimeout(() => {
-      this.initDonuts();
-      this.createProgramBar();
-      this.drawGeoMap();
-      this.createAllPies();
-      this.createStackedBar(); // <-- importante: ahora sí lo llamamos
-    }, 50);
-
-    window.addEventListener('resize', this.onResize);
+      this.loadCharts();
+    }, 200);
   }
 
-  ngOnDestroy(): void {
-    // limpiar listeners y charts una sola vez
-    window.removeEventListener('resize', this.onResize);
-    this.destroyCharts();
+  // ---------------- Helpers ----------------
+  private safeFirst(res: any) {
+    if (!res) return null;
+    const d = res.data ?? res;
+    if (Array.isArray(d)) return d.length ? d[0] : null;
+    return d;
   }
 
-  // onResize único y simple
-  private onResize = () => {
-    this.charts.forEach(c => c?.resize?.());
+  private parseNumber(v: any) {
+    if (v == null) return 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
   }
 
-  // ---------------- DONUTS SUPERIORES ----------------
-  private initDonuts() {
-    if (typeof Chart === 'undefined') {
-      console.error('Chart.js no está disponible. Asegúrate de agregar el CDN en index.html');
-      return;
+  private destroyChartIfExists(id: string) {
+    const existing = this.chartMap[id];
+    if (existing) {
+      existing.destroy();
+      delete this.chartMap[id];
     }
+  }
 
-    const makeDonut = (el: ElementRef<HTMLCanvasElement>, data: number[], labels = ['Presencial','Virtual']) => {
-      const ctx = el?.nativeElement?.getContext('2d');
-      if (!ctx) { console.error('Context 2D no disponible para canvas', el); return null; }
+  /**
+   * Genera un array de colores cíclicos, usando un color neutro si solo hay una distinción.
+   */
+  private colorsFor(n: number): string[] {
+    if (n === 1) return [this.NEUTRAL_COLOR];
+    const arr: string[] = [];
+    for (let i = 0; i < n; i++) arr.push(this.PALETTE[i % this.PALETTE.length]);
+    return arr;
+  }
 
-      const c = new Chart(ctx, {
-        type: 'doughnut',
+  // Tooltip: show raw value
+  private tooltipCallbacks() {
+    return {
+      callbacks: {
+        label: (context: any) => {
+          const dataset = context.dataset;
+          const value = context.parsed?.y ?? context.parsed ?? 0;
+          const label = context.label || dataset.label || '';
+          return `${label}: ${value}`;
+        }
+      }
+    };
+  }
+
+  // ---------------- KPIs ----------------
+  loadKPIs() {
+    const sub = forkJoin({
+      semestre: this.dashboardService.getSemestreTop().pipe(catchError(() => of(null))),
+      programa: this.dashboardService.getProgramaTop().pipe(catchError(() => of(null))),
+      tipo: this.dashboardService.getTipoTop().pipe(catchError(() => of(null))),
+      convenio: this.dashboardService.getConvenioTop().pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: (res) => {
+        // Ejecutamos en zona Angular por si algo vino desde fuera de zone
+        this.ngZone.run(() => {
+          const semestre = this.safeFirst(res.semestre) || {};
+          const programa = this.safeFirst(res.programa) || {};
+          const tipo = this.safeFirst(res.tipo) || {};
+          const convenio = this.safeFirst(res.convenio) || {};
+
+          // Reasignamos la referencia (inmutabilidad ligera) para que OnPush detecte el cambio
+          this.kpis = { ...this.kpis, semestre, programa, tipo, convenio };
+
+          // Debug rápido: (puedes comentar luego)
+          console.log('KPIS loaded:', this.kpis);
+
+          if (semestre?.anio) {
+            this.periodo = { ...this.periodo, anio: semestre.anio || this.periodo.anio, semestre: semestre.semestre || this.periodo.semestre };
+            // recargar KPIs de periodo con valores reales
+            this.loadPeriodoKPIs(this.periodo.anio, this.periodo.semestre);
+          }
+
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando KPIs (subscribe):', err);
+      }
+    });
+    this.subs.push(sub);
+  }
+
+  loadPeriodoKPIs(anio: number, semestre: number) {
+    this.periodo = { ...this.periodo, anio, semestre };
+
+    const sub = forkJoin({
+      total: this.dashboardService.getTotalPeriodo(anio, semestre).pipe(catchError(() => of(null))),
+      entrantes: this.dashboardService.getEntrantesPeriodo(anio, semestre).pipe(catchError(() => of(null))),
+      salientes: this.dashboardService.getSalientesPeriodo(anio, semestre).pipe(catchError(() => of(null))),
+      topPais: this.dashboardService.getTopPaisPeriodo(anio, semestre).pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: (res) => {
+        this.ngZone.run(() => {
+          this.periodoKpis = {
+            total: this.parseNumber(this.safeFirst(res.total)?.total_movilidades ?? 0),
+            entrantes: this.parseNumber(this.safeFirst(res.entrantes)?.total_entrantes ?? 0),
+            salientes: this.parseNumber(this.safeFirst(res.salientes)?.total_salientes ?? 0),
+            topPais: (() => {
+              const topp = res.topPais?.data ?? res.topPais ?? null;
+              return (Array.isArray(topp) ? (topp[0] ?? null) : topp) ?? null;
+            })()
+          };
+
+          // Debug rápido
+          console.log('Periodo KPIs:', this.periodoKpis);
+
+          // Recargamos charts (si cambió periodo)
+          setTimeout(() => {
+            this.loadCharts();
+          }, 200);
+
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err) => {
+        console.error('Error KPIs periodo (subscribe):', err);
+      }
+    });
+
+    this.subs.push(sub);
+  }
+
+  // ---------------- Charts ----------------
+  loadCharts() {
+    // destruye charts viejos si existen (seguro)
+    Object.keys(this.chartMap).forEach(k => this.destroyChartIfExists(k));
+
+    this.chartMovilidadesTiempo();
+    this.chartPaises();
+    this.chartProgramas();
+    this.chartConvenios();
+    this.chartInstituciones();
+    this.chartGeneros();
+    this.chartDirecciones();
+    this.chartTipos();
+    this.chartModalidades();
+  }
+
+  // 1) Movilidades: barras comparativas (Sem1 vs Sem2), etiquetas DENTRO mostrando valor
+  private chartMovilidadesTiempo() {
+    const sub = this.dashboardService.getMovilidadesPorTiempo().pipe(catchError(() => of([]))).subscribe(data => {
+      const years = Array.from(new Set(data.map((d:any) => d.anio))).sort((a:any,b:any)=>a-b);
+      const sem1 = years.map((y:any) => (data.find((d:any) => d.anio === y && d.semestre === 1)?.total_movilidades ?? 0));
+      const sem2 = years.map((y:any) => (data.find((d:any) => d.anio === y && d.semestre === 2)?.total_movilidades ?? 0));
+
+      const id = 'movilidadesCanvas';
+      this.destroyChartIfExists(id);
+      const ctx = (document.getElementById(id) as HTMLCanvasElement)?.getContext('2d');
+      if (!ctx) return;
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
         data: {
-          labels,
-          datasets: [{
-            data,
-            backgroundColor: ['#3b82f6', '#f59e0b'],
-            borderWidth: 0
-          }]
+          labels: years.map(String),
+          datasets: [
+            { label: 'Semestre 1', data: sem1, backgroundColor: this.PALETTE[0] },
+            { label: 'Semestre 2', data: sem2, backgroundColor: this.PALETTE[1] }
+          ]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          cutout: '60%',
           plugins: {
-            legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 6 } },
-            tooltip: { enabled: true }
+            title: { display: true, text: 'Movilidades por Año (Sem1 vs Sem2)' },
+            tooltip: this.tooltipCallbacks(),
+            datalabels: {
+              color: '#fff',
+              anchor: 'center',
+              align: 'center',
+              formatter: (value: any, ctx: any) => {
+                const index = ctx.dataIndex;
+                const v1 = sem1[index] ?? 0;
+                const v2 = sem2[index] ?? 0;
+                return ctx.datasetIndex === 0 ? v1 : v2;
+              }
+            }
+          },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+      this.chartMap[id] = chart;
+    }, err => console.error('err movilidades tiempo', err));
+    this.subs.push(sub);
+  }
+
+  // 2) Paises: dos gráficas verticales (Colombia → otros / otros → Colombia)
+  private chartPaises() {
+    const sub = this.dashboardService.getMovilidadesPorPais().pipe(catchError(() => of([]))).subscribe(data => {
+      const origenCol = data.filter((d:any) => d.paisorigen === 'Colombia' && d.paisdestino !== 'Colombia').slice(0,12);
+      const destinoCol = data.filter((d:any) => d.paisdestino === 'Colombia' && d.paisorigen !== 'Colombia').slice(0,12);
+
+      this.renderBarWithLabelsInside('paisesOrigenCanvas', origenCol.map((d:any) => d.paisdestino), origenCol.map((d:any) => d.total_movilidades), 'Colombia → País Saliente');
+      this.renderBarWithLabelsInside('paisesDestinoCanvas', destinoCol.map((d:any) => d.paisorigen), destinoCol.map((d:any) => d.total_movilidades), 'País Entrante → Colombia');
+    }, err => console.error('err paises', err));
+    this.subs.push(sub);
+  }
+
+  // 3) Programas
+  private chartProgramas() {
+    const sub = this.dashboardService.getMovilidadesPorPrograma().pipe(catchError(() => of([]))).subscribe(data => {
+      const labels = data.map((d:any) => d.nombreprograma);
+      const values = data.map((d:any) => d.total_movilidades);
+      const colors = labels.map((l: any, i: number) => this.PALETTE[i % this.PALETTE.length]);
+      this.renderHorizontalBarWithLabelsInside('programasCanvas', labels, values, 'Programas', colors);
+    }, err => console.error('err programas', err));
+    this.subs.push(sub);
+  }
+
+  // 4) Convenios
+  private chartConvenios() {
+    const sub = this.dashboardService.getMovilidadesPorConvenio().pipe(catchError(() => of([]))).subscribe(data => {
+      this.renderBarWithLabelsInside('conveniosCanvas', data.map((d:any) => d.tipo), data.map((d:any) => d.total_movilidades), 'Convenios');
+    }, err => console.error('err convenios', err));
+    this.subs.push(sub);
+  }
+
+  // 5) Instituciones
+  private chartInstituciones() {
+    const sub = this.dashboardService.getMovilidadesPorInstitucion().pipe(catchError(() => of([]))).subscribe(data => {
+      const entrantes = data.filter((d:any) => d.instituciondestino === 'UDI' && d.institucionorigen !== 'UDI').slice(0,12);
+      const salientes = data.filter((d:any) => d.institucionorigen === 'UDI' && d.instituciondestino !== 'UDI').slice(0,12);
+      this.renderHorizontalBarWithLabelsInside('institucionesEntrantesCanvas', entrantes.map((d:any) => d.institucionorigen), entrantes.map((d:any) => d.total_movilidades), 'Instituciones → UDI');
+      this.renderHorizontalBarWithLabelsInside('institucionesSalientesCanvas', salientes.map((d:any) => d.instituciondestino), salientes.map((d:any) => d.total_movilidades), 'UDI → Instituciones');
+    }, err => console.error('err instituciones', err));
+    this.subs.push(sub);
+  }
+
+  // 6) Generos
+  private chartGeneros() {
+    const sub = this.dashboardService.getMovilidadesPorGenero().pipe(catchError(() => of([]))).subscribe(data => {
+      this.renderPieWithPercentInside('generosCanvas', data.map((d:any) => d.genero), data.map((d:any) => d.total_movilidades), 'Género');
+    }, err => console.error('err generos', err));
+    this.subs.push(sub);
+  }
+
+  // 7) Direcciones
+  private chartDirecciones() {
+    const sub = this.dashboardService.getMovilidadesPorDireccion().pipe(catchError(() => of([]))).subscribe(data => {
+      this.renderBarWithLabelsInside('direccionesCanvas', data.map((d:any) => d.direccion), data.map((d:any) => d.total_movilidades), 'Dirección');
+    }, err => console.error('err direcciones', err));
+    this.subs.push(sub);
+  }
+
+  // 8) Tipos
+  private chartTipos() {
+    const sub = this.dashboardService.getMovilidadesPorTipo().pipe(catchError(() => of([]))).subscribe(data => {
+      this.renderPieWithPercentInside('tiposCanvas', data.map((d:any) => d.tipo), data.map((d:any) => d.total_movilidades), 'Tipo');
+    }, err => console.error('err tipos', err));
+    this.subs.push(sub);
+  }
+
+  // 9) Modalidades
+  private chartModalidades() {
+    const sub = this.dashboardService.getMovilidadesPorModalidad().pipe(catchError(() => of([]))).subscribe(data => {
+      this.renderPieWithPercentInside('modalidadesCanvas', data.map((d:any) => d.modalidad), data.map((d:any) => d.total_movilidades), 'Modalidad');
+    }, err => console.error('err modalidades', err));
+    this.subs.push(sub);
+  }
+
+  // ---------------- Tables (TOP / BOTTOM) ----------------
+  loadTables() {
+    const sub = forkJoin({
+      top: this.dashboardService.getTopPaises().pipe(catchError(() => of([]))),
+      bottom: this.dashboardService.getBottomPaises().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: res => {
+        this.ngZone.run(() => {
+          const top: any[] = res.top ?? [];
+          const bottom: any[] = res.bottom ?? [];
+
+          // Reasignar arrays (inmutabilidad ligera)
+          this.topPaisesOrigen = top.filter((p:any) => p.paisorigen !== 'Colombia');
+          this.topPaisesDestino = top.filter((p:any) => p.paisdestino !== 'Colombia');
+          this.bottomPaisesOrigen = bottom.filter((p:any) => p.paisorigen !== 'Colombia');
+          this.bottomPaisesDestino = bottom.filter((p:any) => p.paisdestino !== 'Colombia');
+
+          console.log('Tables loaded, topPaisesOrigen:', this.topPaisesOrigen);
+
+          this.cdr.detectChanges();
+        });
+      },
+      error: err => {
+        console.error('err tables (subscribe):', err);
+      }
+    });
+    this.subs.push(sub);
+  }
+
+  // ---------------- Render helpers (con valor absoluto dentro) ----------------
+
+  private renderBarWithLabelsInside(id: string, labels: string[], values: number[], title: string) {
+    this.destroyChartIfExists(id);
+    const ctx = (document.getElementById(id) as HTMLCanvasElement)?.getContext('2d');
+    if (!ctx) return;
+    const colors = this.colorsFor(labels.length);
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: title, data: values, backgroundColor: colors }] },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: title },
+          tooltip: this.tooltipCallbacks(),
+          datalabels: {
+            color: '#fff',
+            anchor: 'center',
+            align: 'center',
+            formatter: (value: any) => value
+          }
+        },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+    this.chartMap[id] = chart;
+  }
+
+  private renderHorizontalBarWithLabelsInside(id: string, labels: string[], values: number[], title: string, colors?: string[]) {
+    this.destroyChartIfExists(id);
+    const ctx = (document.getElementById(id) as HTMLCanvasElement)?.getContext('2d');
+    if (!ctx) return;
+    const palette = colors ?? this.colorsFor(labels.length);
+
+    const chart = new Chart(ctx, {
+      type: 'bar' as ChartConfiguration['type'],
+      data: { labels, datasets: [{ label: title, data: values, backgroundColor: palette }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          title: { display: true, text: title },
+          tooltip: this.tooltipCallbacks(),
+          datalabels: {
+            color: '#fff',
+            anchor: 'center',
+            align: 'center',
+            formatter: (value: any) => value
+          }
+        },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+    this.chartMap[id] = chart;
+  }
+
+  private renderPieWithPercentInside(id: string, labels: string[], values: number[], title: string) {
+    this.destroyChartIfExists(id);
+    const ctx = (document.getElementById(id) as HTMLCanvasElement)?.getContext('2d');
+    if (!ctx) return;
+    const colors = this.colorsFor(labels.length);
+
+    const chart = new Chart(ctx, {
+      type: 'pie',
+      data: { labels, datasets: [{ label: title, data: values, backgroundColor: colors }] },
+      options: {
+        responsive: true,
+        plugins: {
+          title: { display: true, text: title },
+          tooltip: this.tooltipCallbacks(),
+          datalabels: {
+            color: '#fff',
+            formatter: (value: any) => value
           }
         }
-      });
-      this.charts.push(c);
-      return c;
-    };
-
-    makeDonut(this.studentInCanvas, [66.7, 33.3]);
-    makeDonut(this.studentOutCanvas, [38.5, 61.5]);
-    makeDonut(this.teacherInCanvas, [66.7, 33.3]);
-    makeDonut(this.teacherOutCanvas, [100, 0]);
-    makeDonut(this.adminInCanvas, [66.7, 33.3]);
-    makeDonut(this.adminOutCanvas, [71.4, 28.6]);
-  }
-
-  private destroyCharts() {
-    this.charts.forEach(c => {
-      try { c?.destroy?.(); } catch (e) { /* ignore */ }
-    });
-    this.charts = [];
-    this.programChart = null;
-    this.stackedChart = null;
-  }
-
-  // ---------------- PROGRAM BAR ----------------
-  private createProgramBar() {
-    if (typeof Chart === 'undefined') { console.error('Chart.js no está cargado'); return; }
-    const ctx = this.programCanvas.nativeElement.getContext('2d');
-    if (!ctx) { console.error('No se obtuvo contexto 2D para programCanvas'); return; }
-
-    // destruir anterior si existiera
-    this.programChart?.destroy?.();
-    // Re-crear
-    this.programChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: this.programs,
-        datasets: [
-          { label: 'Presencial', data: this.presencialCounts, backgroundColor: '#3b82f6', barThickness: 'flex' },
-          { label: 'Virtual',     data: this.virtualCounts,    backgroundColor: '#f59e0b', barThickness: 'flex' }
-        ]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { x: { beginAtZero: true, ticks:{ stepSize: 1 } }, y: { ticks:{ autoSkip: false } } },
-        plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } }
       }
     });
-
-    // asegurarnos de gestionar resize/destrucción centralizada
-    this.charts.push(this.programChart);
-  }
-
-  // ---------- MAPA (Google GeoChart) ----------
-  private drawGeoMap() {
-    const geoData = [
-      ['Country', 'Movilidades'],
-      ['Colombia', 9],
-      ['Argentina', 5],
-      ['México', 2],
-      ['España', 1]
-    ];
-
-    try {
-      google.charts.load('current', { packages: ['geochart'] });
-      google.charts.setOnLoadCallback(() => {
-        const data = google.visualization.arrayToDataTable(geoData);
-        const options = {
-          region: 'world',
-          displayMode: 'regions',
-          colorAxis: { colors: ['#d1fae5', '#ec4899', '#3b82f6'] },
-          backgroundColor: '#f8fafc',
-          datalessRegionColor: '#e5e7eb',
-          legend: 'none'
-        };
-        const chart = new google.visualization.GeoChart(document.getElementById('geoMap'));
-        chart.draw(data, options);
-      });
-    } catch (err) {
-      console.error('Error cargando Google Charts:', err);
-      const el = document.getElementById('geoMap');
-      if (el) el.innerHTML = '<div class="h-full flex items-center justify-center text-gray-500">Mapa no disponible</div>';
-    }
-  }
-
-  // ---------------- Stacked Horizontal Bar ----------------
-  private createStackedBar() {
-    if (typeof Chart === 'undefined') { console.error('Chart.js no está cargado'); return; }
-    const ctx = this.stackedCanvas.nativeElement.getContext('2d');
-    if (!ctx) { console.error('No se obtuvo contexto 2D para stackedCanvas'); return; }
-
-    // destruir si existiera (evitar duplicados)
-    const existing = this.charts.find(c => c?.canvas === this.stackedCanvas.nativeElement);
-    if (existing) { existing.destroy(); this.charts = this.charts.filter(c => c !== existing); }
-
-    this.stackedChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: this.convenioLabels,
-        datasets: [
-          { label: 'Virtual', data: this.virtualData, backgroundColor: '#3b82f6' },
-          { label: 'Presencial', data: this.presencialData, backgroundColor: '#f59e0b' }
-        ]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 2,
-        scales: { x: { stacked: true, beginAtZero: true, ticks:{ stepSize: 1 } }, y: { stacked: true } },
-        plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }
-      }
-    });
-
-    this.charts.push(this.stackedChart);
-  }
-
-  // ---------------- Multiple pies (inferior) ----------------
-  private createPie(elRef: ElementRef<HTMLCanvasElement>, data: number[], labels: string[]) {
-    if (typeof Chart === 'undefined') { console.error('Chart.js no está cargado'); return null; }
-    const ctx = elRef.nativeElement.getContext('2d');
-    if (!ctx) { console.error('No se obtuvo contexto 2D para pie'); return null; }
-
-    const existing = this.charts.find(c => c?.canvas === elRef.nativeElement);
-    if (existing) { existing.destroy(); this.charts = this.charts.filter(c => c !== existing); }
-
-    const c = new Chart(ctx, {
-      type: 'pie',
-      data: { labels, datasets: [{ data, backgroundColor: this.generatePalette(data.length), borderWidth: 0 }] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 1,
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10 } },
-          tooltip: { callbacks: {
-            label: (ctx: any) => {
-              const v = ctx.raw;
-              const total = ctx.dataset.data.reduce((a: number,b:number)=>a+b,0);
-              const pct = total ? ((v/total)*100).toFixed(1) + '%' : '';
-              return `${ctx.label}: ${v} (${pct})`;
-            }
-          }}
-        }
-      }
-    });
-
-    this.charts.push(c);
-    return c;
-  }
-
-  private createAllPies() {
-    this.createPie(this.pieStudentOut, [17,13,13,11,10,9,9,7,6,4],
-      ['Rotacion medica','Semestre intercambio','Pasantía','Misión','Curso','Pasantía2','Evento','Doctorado','PostDoc','Asistencia']);
-    this.createPie(this.pieStudentIn, [28,25,19,16,6,6], ['Rotacion','Mision','Pasantia','Curso','Evento','Asistencia']);
-    this.createPie(this.pieTeacherOut, [15,13,13,13,10,8,8,6,6,8],
-      ['PostDoctorado','Doctorado','Misión','Evento','Curso','Asistencia','Gestión','Otro','Otro2','Otro3']);
-    this.createPie(this.pieTeacherIn, [16,14,14,14,10,8,7,5,5,7],
-      ['PostDoctorado','Doctorado','Misión','Evento','Curso','Asistencia','Gestión','Otro','Otro2','Otro3']);
-    this.createPie(this.pieAdminIn, [27,9,9,9,9,9,9], ['Gestión','Curso corto','Evento','Asistencia','Otro1','Otro2','Otro3']);
-    this.createPie(this.pieAdminOut, [22,17,14,14,11,8,6,8],
-      ['Gestión','Asistencia','Curso corto','Evento','Misión','Otro1','Otro2','Otro3']);
-  }
-
-  // Utility: palette
-  private generatePalette(n: number) {
-    const base = ['#3b82f6','#f97316','#10b981','#8b5cf6','#ef4444','#06b6d4','#f59e0b','#84cc16','#ec4899','#0ea5a4','#a78bfa','#fb7185','#60a5fa','#34d399'];
-    const palette: string[] = [];
-    for (let i = 0; i < n; i++) palette.push(base[i % base.length]);
-    return palette;
-  }
-
-  // helper: descargar imagen de cualquier chart
-  downloadChartImage(chartIndexOrCanvas: number | HTMLCanvasElement, filename = 'chart.png') {
-    let canvasEl: HTMLCanvasElement | null = null;
-    if (typeof chartIndexOrCanvas === 'number') {
-      const c = this.charts[chartIndexOrCanvas];
-      canvasEl = c?.canvas || null;
-    } else {
-      canvasEl = chartIndexOrCanvas;
-    }
-    if (!canvasEl) return;
-    const link = document.createElement('a');
-    link.href = canvasEl.toDataURL('image/png');
-    link.download = filename;
-    link.click();
+    this.chartMap[id] = chart;
   }
 }
