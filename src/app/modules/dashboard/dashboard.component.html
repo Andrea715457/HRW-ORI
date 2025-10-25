@@ -7,7 +7,7 @@
     <div class="bg-white p-5 rounded-lg shadow-xl border border-blue-100 text-center transition duration-300 hover:scale-[1.01]">
       <div class="text-sm font-semibold text-gray-600">Semestre con más movilidades</div>
       <div class="text-4xl font-black text-blue-700 mt-1">{{ kpis.semestre?.total_movilidades ?? '-' }}</div>
-      <div class="text-xs text-blue-500 font-medium mt-1">Año {{ kpis.semestre?.anio ?? '-' }} · Sem {{ kpis.semestre?.semestre ?? '-' }}</div>
+      <div class="text-xs text-blue-500 font-medium mt-1">Año {{ kpis.semestre?.anio ?? '-' }}-{{ kpis.semestre?.semestre ?? '-' }}</div>
     </div>
 
     <div class="bg-white p-5 rounded-lg shadow-xl border border-green-100 text-center transition duration-300 hover:scale-[1.01]">
@@ -26,37 +26,6 @@
       <div class="text-sm font-semibold text-gray-600">Convenio más frecuente</div>
       <div class="text-4xl font-black text-purple-700 mt-1">{{ kpis.convenio?.total_movilidades ?? '-' }}</div>
       <div class="text-xs text-purple-500 font-medium mt-1">{{ kpis.convenio?.tipo ?? '-' }} · {{ kpis.convenio?.estado ?? '-' }}</div>
-    </div>
-  </div>
-
-  <!-- Controles y KPIs por periodo -->
-  <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
-        <div class="col-span-2 md:col-span-1">
-          <label class="text-xs font-semibold text-gray-600 block mb-1">Año</label>
-          <input type="number" [(ngModel)]="periodo.anio" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition" />
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <label class="text-xs font-semibold text-gray-600 block mb-1">Semestre</label>
-          <select [(ngModel)]="periodo.semestre" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition">
-            <option [value]="1">1</option>
-            <option [value]="2">2</option>
-          </select>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <button class="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition" (click)="loadPeriodoKPIs(periodo.anio, periodo.semestre)">
-            Actualizar
-          </button>
-        </div>
-
-        <div class="col-span-3 md:col-span-1 bg-blue-50 p-3 rounded-lg text-center">
-            <div class="text-xs text-gray-600">Total movilidades</div>
-            <div class="text-xl font-bold text-blue-800">{{ periodoKpis.total ?? 0 }}</div>
-        </div>
-        <div class="col-span-3 md:col-span-2 bg-blue-50 p-3 rounded-lg text-center">
-            <div class="text-xs text-gray-600">Movilidades (Entrantes / Salientes)</div>
-            <div class="text-xl font-bold text-blue-800">{{ periodoKpis.entrantes ?? 0 }} / {{ periodoKpis.salientes ?? 0 }}</div>
-        </div>
     </div>
   </div>
 
