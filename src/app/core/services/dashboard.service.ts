@@ -14,7 +14,7 @@ interface ApiResponse<T> {
 export interface Tiempo { anio: number; semestre: number; total_movilidades: number; }
 export interface Pais { paisorigen: string; paisdestino: string; total_movilidades: number; }
 export interface Programa { nombreprograma: string; facultad?: string; total_movilidades: number; }
-export interface Convenio { tipo: string; vigencia?: string; estado?: string; total_movilidades: number; }
+export interface Convenio { codigo: string; total_movilidades: number; }
 export interface Institucion { institucionorigen: string; instituciondestino: string; total_movilidades: number; }
 export interface Genero { genero: string; total_movilidades: number; }
 export interface Direccion { direccion: string; total_movilidades: number; }
