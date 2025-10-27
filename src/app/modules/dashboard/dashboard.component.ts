@@ -277,7 +277,7 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
   // 4) Convenios
   private chartConvenios() {
     const sub = this.dashboardService.getMovilidadesPorConvenio().pipe(catchError(() => of([]))).subscribe(data => {
-      this.renderBarWithLabelsInside('conveniosCanvas', data.map((d:any) => d.tipo), data.map((d:any) => d.total_movilidades), 'Convenios');
+      this.renderBarWithLabelsInside('conveniosCanvas', data.map((d:any) => d.codigo), data.map((d:any) => d.total_movilidades), 'Convenios');
     }, err => console.error('err convenios', err));
     this.subs.push(sub);
   }
@@ -285,10 +285,10 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
   // 5) Instituciones
   private chartInstituciones() {
     const sub = this.dashboardService.getMovilidadesPorInstitucion().pipe(catchError(() => of([]))).subscribe(data => {
-      const entrantes = data.filter((d:any) => d.instituciondestino === 'UDI' && d.institucionorigen !== 'UDI').slice(0,12);
-      const salientes = data.filter((d:any) => d.institucionorigen === 'UDI' && d.instituciondestino !== 'UDI').slice(0,12);
-      this.renderHorizontalBarWithLabelsInside('institucionesEntrantesCanvas', entrantes.map((d:any) => d.institucionorigen), entrantes.map((d:any) => d.total_movilidades), 'Instituciones → UDI');
-      this.renderHorizontalBarWithLabelsInside('institucionesSalientesCanvas', salientes.map((d:any) => d.instituciondestino), salientes.map((d:any) => d.total_movilidades), 'UDI → Instituciones');
+      const entrantes = data.filter((d:any) => d.instituciondestino === 'Universidad de Investigacion y Desarrollo (UDI)' && d.institucionorigen !== 'Universidad de Investigacion y Desarrollo (UDI)').slice(0,12);
+      const salientes = data.filter((d:any) => d.institucionorigen === 'Universidad de Investigacion y Desarrollo (UDI)' && d.instituciondestino !== 'Universidad de Investigacion y Desarrollo (UDI)').slice(0,12);
+      this.renderHorizontalBarWithLabelsInside('institucionesEntrantesCanvas', entrantes.map((d:any) => d.institucionorigen), entrantes.map((d:any) => d.total_movilidades), 'Instituciones → ORI');
+      this.renderHorizontalBarWithLabelsInside('institucionesSalientesCanvas', salientes.map((d:any) => d.instituciondestino), salientes.map((d:any) => d.total_movilidades), 'ORI → Instituciones');
     }, err => console.error('err instituciones', err));
     this.subs.push(sub);
   }
