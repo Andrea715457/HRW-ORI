@@ -4,7 +4,7 @@ import {
   FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators,
   AbstractControl, ValidationErrors, ValidatorFn, FormControl
 } from '@angular/forms';import { Convenio, Institucion, TipoMovilidad } from '../../../../../core/models/ori.model';
-import {MultiSelectComponent} from '../../../../../shared/components/multi-select/multi-select.component'
+import MultiSelectComponent from '../../../../../shared/components/multi-select/multi-select.component';
 @Component({
   selector: 'app-convenio-form',
   imports: [CommonModule, ReactiveFormsModule, MultiSelectComponent],
@@ -27,7 +27,7 @@ export class ConvenioFormComponent  implements OnChanges {
   constructor(private fb: FormBuilder){
     this.form = this.fb.group({
       id: [null as number | null],
-      codigo: ['', [Validators.required, Validators.pattern(/^[A-Z0-9-]+$/)]],
+      codigo: ['', [Validators.required]],
       nombre: ['', [Validators.required, Validators.maxLength(250)]],
       tipoConvenio: ['', Validators.required],
       fechaInicio: ['', Validators.required],

@@ -44,7 +44,7 @@ export class UtilsService {
           nombre: t.nombre,
         }))
       ),
-      map((arr) => arr.sort((a, b) => a.nombre.localeCompare(b.nombre)))
+      map((arr) => arr.sort((a, b) => a.codigo.localeCompare(b.codigo)))
     );
   }
 }

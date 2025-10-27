@@ -26,7 +26,7 @@ export default class ConveniosComponent {
   view = signal<Vista>('convenio');
   setView(v: Vista) {
     this.view.set(v);
-    localStorage.setItem('oriTab', v);        // 👈 persistimos pestaña
+    localStorage.setItem('oriTab', v);        // persistimos pestaña
   }
   private editingCodigo = signal<string | null>(null);
   editingCodigoValue = () => this.editingCodigo();

@@ -1,22 +1,40 @@
 <nav class="w-full flex items-center justify-between px-6 py-3 bg-white shadow-sm border-b border-gray-200">
-  <!-- Logo o título -->
   <div class="flex items-center gap-2">
     <span class="font-semibold text-gray-800 text-sm md:text-base">Oficina de Relaciones Internacionales</span>
   </div>
 
-  <!-- Sección de usuario -->
   <div class="flex items-center gap-4 ml-auto">
 
-    <span *ngIf="usuarioActual" class="text-sm text-gray-700 hidden md:block">
-      Hola, <strong>{{ usuarioActual }}</strong>
-    </span>
+    @if (usuarioActual) {
+      <span class="text-sm text-gray-700 hidden md:block">
+        Hola, <strong>{{ usuarioActual }}</strong>
+      </span>
+    }
 
-    <!-- 🔹 Botón de cerrar sesión -->
+    <!-- 🔔 Campanita -->
+    <button (click)="openNotifications()"
+            class="relative p-2 rounded-lg hover:bg-gray-100 focus:outline-none"
+            aria-label="Notificaciones">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+
+      @if (unreadCount$ | async; as unread) {
+        @if (unread > 0) {
+          <span class="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-600 text-white text-xs
+                        flex items-center justify-center">
+            {{ unread }}
+          </span>
+        }
+      }
+    </button>
+
+    <!-- Cerrar sesión -->
     <button
       (click)="logout()"
       class="middle none font-sans font-bold center uppercase transition-all cursor-pointer
-             text-xs py-2 rounded-lg text-gray-600 hover:bg-gray-100
-             active:bg-gray-200 flex items-center gap-1 px-3">
+             text-xs py-2 rounded-lg text-gray-600 hover:bg-gray-100 active:bg-gray-200 flex items-center gap-1 px-3">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
            fill="currentColor" aria-hidden="true"
            class="h-5 w-5 text-gray-600">
@@ -28,3 +46,66 @@
     </button>
   </div>
 </nav>
+
+<!-- Modal de notificaciones -->
+@if (isModalOpen) {
+  <div class="fixed inset-0 bg-black/40 z-40" (click)="closeNotifications()"></div>
+
+  <div class="fixed right-4 top-14 w-[22rem] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b">
+      <h3 class="font-semibold text-gray-800">Notificaciones</h3>
+      <div class="flex items-center gap-2">
+        <!-- Botón refrescar -->
+        <button (click)="manualRefresh()" class="p-1 rounded hover:bg-gray-100" title="Actualizar">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v6h6M20 20v-6h-6M20 10a8 8 0 10-7.446 7.97"/>
+          </svg>
+        </button>
+        <button (click)="closeNotifications()" class="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                  d="M10 8.586l4.95-4.95a1 1 0 111.414 1.415L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z"
+                  clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="max-h-80 overflow-y-auto divide-y">
+      @if (loading$ | async) {
+        <div class="p-4 text-sm text-gray-600">Cargando notificaciones…</div>
+      } @else {
+        @if (error$ | async; as err) {
+          @if (err) {
+            <div class="p-4 text-sm text-red-600">{{ err }}</div>
+          }
+        }
+        @if (notifs$ | async; as lista) {
+          @if (lista.length === 0) {
+            <div class="p-4 text-sm text-gray-500">No hay convenios por vencer en los próximos 90 días.</div>
+          } @else {
+            @for (n of lista; track n.id) {
+              <div class="p-3">
+                <div class="flex items-start gap-2">
+                  <div class="mt-0.5">
+                    @if (n.severidad === 'danger') {
+                      <span class="inline-block w-2 h-2 rounded-full bg-red-600"></span>
+                    } @else {
+                      <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                    }
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-gray-800">{{ n.titulo }}</div>
+                    <div class="text-sm text-gray-600 mt-0.5">{{ n.mensaje }}</div>
+                    <div class="text-xs text-gray-500 mt-1">Convenio: {{ n.convenioCodigo }}</div>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        }
+      }
+    </div>
+  </div>
+}

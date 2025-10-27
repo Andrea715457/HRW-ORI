@@ -14,7 +14,7 @@ export interface OptionKV { codigo: string; nombre: string; }
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MultiSelectComponent implements ControlValueAccessor {
+export default class MultiSelectComponent implements ControlValueAccessor {
   @Input() options: OptionKV[] = [];
   @Input() placeholder = 'Agregar…';
 
@@ -52,7 +52,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     return this.options
       .filter(o => !selected.has(o.codigo) &&
                    (!q || o.nombre.toLowerCase().includes(q) || o.codigo.toLowerCase().includes(q)))
-      .slice(0, 8);
+      .slice(0, 16);
   });
 
   displayName(code: string) { return this.options.find(o => o.codigo === code)?.nombre ?? code; }
