@@ -103,7 +103,7 @@ export default class ConveniosComponent {
           // setea el formulario con los datos del backend y
           // guarda el CÓDIGO que se está editando
           this._selectedInstitucion.set({ ...apiIns, id: row.id ?? 0 });
-          this.editingCodigo.set(row.codigo);      // 👈 clave
+          this.editingCodigo.set(row.codigo);     
           this.setView('institucion');
         },
         error: (e) => console.error(e)
